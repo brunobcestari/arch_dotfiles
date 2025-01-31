@@ -1,13 +1,24 @@
-:syntax enable
 syntax on
 set number
-set smartindent
-filetype plugin on
+set showcmd
+filetype plugin indent on
+
+set tabstop=2 shiftwidth=2
+set expandtab
+set backspace=indent,eol,start
+
+set hlsearch                    "Highlight on searchs
+set incsearch                   "Incremental Search
+set ignorecase                  "Ignore case sensitive
+set smartcase                   "Unless there is a upper case in the search
 
 call plug#begin()
 Plug 'preservim/NERDTree'
 Plug 'neoclide/coc.nvim', {'branch': 'release'}
+Plug 'rafi/awesome-vim-colorschemes'
 call plug#end()
+
+colo deus
 
 hi CocFloating ctermbg=DarkGrey  " Floating menu bg color
 hi CocMenuSel ctermbg=Blue       " Menu selection bg color
