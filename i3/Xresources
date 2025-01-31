@@ -1,3 +1,5 @@
+!!.Xresources file
+
 !! Appearance
 urxvt.termName: rxvt-unicode
 urxvt.scrollBar: false
