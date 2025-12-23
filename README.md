@@ -129,17 +129,33 @@ cd ~/gitrepos/arch_dotfiles
 
 ```
 arch_dotfiles/
-├── hypr/              # Hyprland & Hyprlock configs
-├── waybar/            # Waybar status bar
-├── mako/              # Notification daemon
-├── alacritty/         # Terminal emulator
-├── sddm/              # Display manager configs
-├── vim/               # Vim configuration & plugins
-├── ps1/               # Custom bash prompt
-├── packages.txt       # Package dependencies
-├── install.sh         # Installation script
-└── README.md          # This file
+├── hypr/                  # Hyprland & Hyprlock configs
+├── waybar/                # Waybar status bar
+├── mako/                  # Notification daemon
+├── alacritty/             # Terminal emulator
+├── sddm/                  # Display manager configs
+├── xdg-desktop-portal/    # Portal config for screen sharing
+├── vim/                   # Vim configuration & plugins
+├── ps1/                   # Custom bash prompt
+├── packages.txt           # Package dependencies
+├── install.sh             # Installation script
+└── README.md              # This file
 ```
+
+## 🎥 Screen Sharing
+
+Screen sharing works with apps like Slack, Discord, Zoom, etc.
+
+**Requirements:**
+- `xdg-desktop-portal-hyprland` (included in packages.txt)
+- Portal configuration (included in `xdg-desktop-portal/portals.conf`)
+
+**Known Issues:**
+- Electron apps (Slack, Discord) may require clicking multiple times to confirm screen selection
+- Workaround: Press Enter instead of clicking, or click and wait a second
+
+**Environment Variables:**
+The Hyprland config includes `ELECTRON_OZONE_PLATFORM_HINT=wayland` for better Electron app support.
 
 ## 🔧 Troubleshooting
 

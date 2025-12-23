@@ -28,7 +28,7 @@ paru -S --needed - < packages.txt
 
 echo ""
 echo -e "${BLUE}Step 2: Creating config directories...${NC}"
-mkdir -p ~/.config/{hypr,waybar,mako,alacritty}
+mkdir -p ~/.config/{hypr,waybar,mako,alacritty,xdg-desktop-portal}
 
 echo ""
 echo -e "${BLUE}Step 3: Copying configuration files...${NC}"
@@ -36,6 +36,7 @@ cp -r hypr/* ~/.config/hypr/
 cp -r waybar/* ~/.config/waybar/
 cp -r mako/* ~/.config/mako/
 cp -r alacritty/* ~/.config/alacritty/
+cp -r xdg-desktop-portal/* ~/.config/xdg-desktop-portal/
 
 # Make waybar scripts executable
 chmod +x ~/.config/waybar/scripts/*.sh 2>/dev/null || true
