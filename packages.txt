@@ -1,0 +1,52 @@
+# Hyprland Setup - Package Dependencies
+# Install with: paru -S --needed - < packages.txt
+
+## Core Hyprland
+hyprland
+hyprlock
+xdg-desktop-portal-hyprland
+
+## Display Manager
+sddm
+
+## Status Bar & Widgets
+waybar
+
+## Notifications
+mako
+
+## Terminal
+alacritty
+
+## Application Launcher
+rofi
+
+## Audio (PipeWire)
+pipewire
+wireplumber
+pipewire-pulse
+pipewire-alsa
+pipewire-jack
+pwvucontrol
+
+## Utilities
+wev
+evtest
+
+## File Manager
+thunar
+
+## Fonts (for icons and UI)
+ttf-font-awesome
+noto-fonts
+noto-fonts-emoji
+
+## Vim & Development
+vim
+nodejs
+npm
+git
+
+## Optional but recommended
+brightnessctl
+playerctl

@@ -1,4 +1,4 @@
-# /etc/bash_config/ps1_config.sh
+# /etc/profile.d/custom_ps1.sh
 
 # paste the following code in .bashrc
 #if [ -f /etc/profile.d/custom_ps1.sh ]; then
