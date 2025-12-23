@@ -1,0 +1,31 @@
+{
+  "pulseaudio#input": {
+    "format": "{format_source}",
+    "format-source": "\uf130 {volume}%",
+    "format-source-muted": "\uf131",
+    "on-click": "~/.config/waybar/scripts/audio-selector.py input",
+    "tooltip-format": "{source_desc}\nMic Volume: {source_volume}%"
+  },
+
+  "pulseaudio#output": {
+    "format": "{icon} {volume}%",
+    "format-muted": " muted",
+    "format-icons": {
+      "headphone": "\uf025",
+      "hands-free": "\uf10b",
+      "headset": "\uee59",
+      "car": "\uf1b9",
+      "default": ["\uf026", "\uf027", "\uf028"]
+    },
+    "scroll-step": 5,
+    "on-click": "~/.config/waybar/scripts/audio-selector.py output",
+    "on-click-middle": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
+    "tooltip-format": "{desc}\nVolume: {volume}%"
+  },
+
+  "pulseaudio/slider": {
+    "min": 0,
+    "max": 100,
+    "orientation": "horizontal"
+  }
+}

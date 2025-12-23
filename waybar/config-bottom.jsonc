@@ -1,0 +1,42 @@
+{
+  "layer": "top",
+  "position": "bottom",
+  "height": 30,
+  "spacing": 4,
+
+  // Import all module definitions from external files
+  "include": [
+    "~/.config/waybar/modules/workspaces.json",
+    "~/.config/waybar/modules/media.json",
+    "~/.config/waybar/modules/audio.json",
+    "~/.config/waybar/modules/power.json",
+    "~/.config/waybar/modules/tray.json"
+  ],
+
+  // Layout: Left | Center | Right
+  "modules-left": [
+    "hyprland/workspaces"
+  ],
+
+  "modules-center": [],
+
+  "modules-right": [
+    "custom/media",
+    "group/audio",
+    "tray",
+    "custom/power"
+  ],
+
+  // ============================================
+  // Group Definitions
+  // ============================================
+
+  "group/audio": {
+    "orientation": "inherit",
+    "modules": [
+      "pulseaudio#input",
+      "pulseaudio#output",
+      "pulseaudio/slider"
+    ]
+  }
+}

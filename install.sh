@@ -29,17 +29,26 @@ paru -S --needed - < packages.txt
 echo ""
 echo -e "${BLUE}Step 2: Creating config directories...${NC}"
 mkdir -p ~/.config/{hypr,waybar,mako,alacritty,xdg-desktop-portal}
+mkdir -p ~/.config/waybar/{scripts,modules,menus}
 
 echo ""
 echo -e "${BLUE}Step 3: Copying configuration files...${NC}"
 cp -r hypr/* ~/.config/hypr/
-cp -r waybar/* ~/.config/waybar/
 cp -r mako/* ~/.config/mako/
 cp -r alacritty/* ~/.config/alacritty/
 cp -r xdg-desktop-portal/* ~/.config/xdg-desktop-portal/
 
+# Copy Waybar configs with modular structure (dual bars: top & bottom)
+cp waybar/config-top.jsonc ~/.config/waybar/
+cp waybar/config-bottom.jsonc ~/.config/waybar/
+cp waybar/style.css ~/.config/waybar/
+cp -r waybar/scripts/* ~/.config/waybar/scripts/
+cp -r waybar/modules/* ~/.config/waybar/modules/
+cp -r waybar/menus/* ~/.config/waybar/menus/ 2>/dev/null || true
+
 # Make waybar scripts executable
 chmod +x ~/.config/waybar/scripts/*.sh 2>/dev/null || true
+chmod +x ~/.config/waybar/scripts/*.py 2>/dev/null || true
 
 echo ""
 echo -e "${BLUE}Step 4: Installing SDDM configs (requires sudo)...${NC}"
@@ -98,7 +107,8 @@ echo "  ✓ Hyprland with Waybar, Mako, Hyprlock"
 echo "  ✓ Alacritty terminal with Tokyo Night theme"
 echo "  ✓ Vim with NERDTree, coc.nvim, and colorschemes"
 echo "  ✓ Custom colorful bash prompt with git branch"
-echo "  ✓ PipeWire audio with multi-device support"
+echo "  ✓ PipeWire audio with GTK device selector popups"
+echo "  ✓ Weather widget with interactive forecast popup"
 echo ""
 echo "Keybindings:"
 echo "  Super+Return    - Terminal"

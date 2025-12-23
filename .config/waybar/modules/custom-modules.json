@@ -1,0 +1,37 @@
+{
+  "custom/weather": {
+    "format": "{}",
+    "return-type": "json",
+    "exec": "wttrbar --location 'Sao_Carlos' --nerd",
+    "interval": 1800,
+    "on-click": "~/.config/waybar/scripts/weather-popup.py",
+    "tooltip": true
+  },
+
+  "custom/vpn": {
+    "format": "{}",
+    "return-type": "json",
+    "exec": "~/.config/waybar/scripts/vpn-status.sh",
+    "interval": 5,
+    "on-click": "protonvpn-app",
+    "tooltip": true
+  },
+
+  "custom/updates": {
+    "format": "{}",
+    "return-type": "json",
+    "exec": "~/.config/waybar/scripts/updates.sh",
+    "interval": 3600,
+    "on-click": "alacritty -e sh -c 'paru -Syu; read -p \"Press enter to close...\"'",
+    "tooltip": true
+  },
+
+  "custom/mail": {
+    "format": "{}",
+    "return-type": "json",
+    "exec": "~/.config/waybar/scripts/thunderbird-mail.sh",
+    "interval": 60,
+    "on-click": "thunderbird",
+    "tooltip": true
+  }
+}

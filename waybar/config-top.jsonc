@@ -1,0 +1,65 @@
+{
+  "layer": "top",
+  "position": "top",
+  "height": 30,
+  "spacing": 4,
+
+  // Import all module definitions from external files
+  "include": [
+    "~/.config/waybar/modules/workspaces.json",
+    "~/.config/waybar/modules/clock.json",
+    "~/.config/waybar/modules/system.json",
+    "~/.config/waybar/modules/audio.json",
+    "~/.config/waybar/modules/network.json",
+    "~/.config/waybar/modules/media.json",
+    "~/.config/waybar/modules/custom-modules.json",
+    "~/.config/waybar/modules/power.json",
+    "~/.config/waybar/modules/tray.json"
+  ],
+
+  // Layout: Left | Center | Right
+  "modules-left": [
+    "hyprland/window"
+  ],
+
+  "modules-center": [
+    "clock",
+    "custom/weather"
+  ],
+
+  "modules-right": [
+    "group/utilities",
+    "group/system",
+    "network"
+  ],
+
+  // ============================================
+  // Group Definitions
+  // ============================================
+
+  "group/system": {
+    "orientation": "inherit",
+    "modules": [
+      "cpu",
+      "memory",
+      "disk"
+    ]
+  },
+
+  "group/audio": {
+    "orientation": "inherit",
+    "modules": [
+      "pulseaudio#input",
+      "pulseaudio#output",
+      "pulseaudio/slider"
+    ]
+  },
+
+  "group/utilities": {
+    "orientation": "inherit",
+    "modules": [
+      "custom/updates",
+      "custom/vpn"
+    ]
+  }
+}

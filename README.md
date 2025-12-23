@@ -6,12 +6,14 @@ Personal dotfiles for Arch Linux with Hyprland window manager.
 
 - **Window Manager**: Hyprland (Wayland compositor)
 - **Display Manager**: SDDM with HiDPI support
-- **Status Bar**: Waybar with custom styling
+- **Status Bar**: Dual Waybar setup (top + bottom) with modular config, grouped modules, and GTK popups
 - **Terminal**: Alacritty with Tokyo Night theme
 - **Notifications**: Mako
 - **Lock Screen**: Hyprlock
 - **App Launcher**: Rofi
-- **Audio**: PipeWire with WirePlumber
+- **Audio**: PipeWire with WirePlumber and GTK device selector popups
+- **Weather**: wttrbar widget with interactive GTK forecast popup
+- **Power Menu**: GTK menu with shutdown/reboot/suspend/hibernate options
 - **Editor**: Vim with NERDTree, coc.nvim, and colorschemes
 - **Shell**: Custom colorful PS1 bash prompt with git branch info
 
@@ -29,7 +31,9 @@ Personal dotfiles for Arch Linux with Hyprland window manager.
 ### Audio
 - Multiple input/output device support
 - Volume wheel integration
-- PipeWire with pwvucontrol for device management
+- PipeWire with WirePlumber
+- GTK popup device selector (click microphone/speaker icons)
+- Real-time device switching with visual feedback
 
 ## 📦 Installation
 
@@ -94,10 +98,45 @@ cd ~/gitrepos/arch_dotfiles
 ## 🎨 Customization
 
 ### Waybar
-- Click volume icon to open pwvucontrol (audio device selector)
-- Middle-click volume icon to mute/unmute
-- Scroll on volume icon to adjust volume
-- Custom styling in `waybar/style.css`
+
+**Dual Bar Setup:**
+Two separate Waybar instances for better organization:
+
+- **Top Bar** (`config-top.jsonc`):
+  - Left: Window title
+  - Center: Clock, Weather widget
+  - Right: Updates, VPN, System monitors (CPU, Memory, Disk), Network
+
+- **Bottom Bar** (`config-bottom.jsonc`):
+  - Left: Hyprland workspaces
+  - Right: Media player, Audio controls (input/output/slider), System tray, Power menu
+
+**Modular Configuration Structure:**
+The Waybar configuration uses a modular approach inspired by the HyDE project, with modules organized into separate JSON files and grouped for better organization:
+
+- **Module Groups**:
+  - `group/system` - CPU, memory, disk monitoring
+  - `group/audio` - Audio input/output/slider controls
+  - `group/utilities` - Updates, VPN status
+
+- **Module Files** (`modules/*.json`): Individual JSON files for each component
+- **Custom Menus** (`menus/`): XML menu files (e.g., power menu)
+
+**Interactive Features:**
+- **Audio Input/Output Selector**: Click microphone/speaker icons to open GTK device selector
+  - Shows all available audio devices
+  - Checkmark (✓) and bold text indicate current device
+  - Single-click to switch devices
+  - Auto-closes after selection
+- **Weather Forecast**: Click weather widget to see detailed forecast
+  - Fetches data from wttr.in
+  - Beautiful ASCII art display
+  - Auto-closes after 30 seconds
+- **Power Menu**: Click power icon for shutdown/reboot/suspend/hibernate options
+- **Volume Control**:
+  - Middle-click volume icon to mute/unmute
+  - Scroll on volume icon to adjust volume
+- Custom Catppuccin styling in `waybar/style.css`
 
 ### Alacritty
 - Tokyo Night color scheme
@@ -130,7 +169,28 @@ cd ~/gitrepos/arch_dotfiles
 ```
 arch_dotfiles/
 ├── hypr/                  # Hyprland & Hyprlock configs
-├── waybar/                # Waybar status bar
+├── waybar/                # Dual Waybar setup (modular structure)
+│   ├── config-top.jsonc   # Top bar configuration
+│   ├── config-bottom.jsonc # Bottom bar configuration
+│   ├── style.css          # Catppuccin styling
+│   ├── modules/           # Modular JSON configs
+│   │   ├── workspaces.json      # Hyprland workspaces & windows
+│   │   ├── clock.json           # Clock with calendar
+│   │   ├── system.json          # CPU, memory, disk
+│   │   ├── audio.json           # Audio input/output/slider
+│   │   ├── network.json         # Network status
+│   │   ├── media.json           # Media player controls
+│   │   ├── custom-modules.json  # Weather, VPN, updates, mail
+│   │   ├── power.json           # Power menu
+│   │   └── tray.json            # System tray
+│   ├── menus/             # XML menu definitions
+│   │   └── power.xml            # Power menu options
+│   └── scripts/           # Python & bash scripts
+│       ├── audio-selector.py    # GTK audio device selector
+│       ├── weather-popup.py     # GTK weather forecast popup
+│       ├── thunderbird-mail.sh  # Email notification checker
+│       ├── vpn-status.sh        # VPN status indicator
+│       └── updates.sh           # System update checker
 ├── mako/                  # Notification daemon
 ├── alacritty/             # Terminal emulator
 ├── sddm/                  # Display manager configs
@@ -166,6 +226,11 @@ The Hyprland config includes `ELECTRON_OZONE_PLATFORM_HINT=wayland` for better E
 ### Volume Wheel Not Working
 - Ensure PipeWire and WirePlumber are running
 - Check `wpctl status` to see audio devices
+
+### Audio/Weather Popups Not Appearing
+- Ensure Python GTK dependencies are installed: `python-gobject`, `gtk3`, `gtk-layer-shell`
+- Check that scripts are executable: `chmod +x ~/.config/waybar/scripts/*.py`
+- GTK Layer Shell provides proper Wayland positioning but gracefully falls back if unavailable
 
 ### HiDPI Issues
 - SDDM Xsetup script sets DPI to 192 (2x scaling)

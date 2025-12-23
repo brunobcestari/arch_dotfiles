@@ -11,6 +11,7 @@ sddm
 
 ## Status Bar & Widgets
 waybar
+wttrbar
 
 ## Notifications
 mako
@@ -29,9 +30,15 @@ pipewire-alsa
 pipewire-jack
 pwvucontrol
 
+## Python & GTK (for Waybar popups)
+python-gobject
+gtk3
+gtk-layer-shell
+
 ## Utilities
 wev
 evtest
+curl
 
 ## File Manager
 thunar

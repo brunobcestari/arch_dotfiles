@@ -216,27 +216,3 @@ window#waybar {
         background-color: rgba(102, 255, 153, 0.2);
     }
 }
-
-/* Power button styling - larger with spacing from tray */
-#custom-power {
-  padding: 0 15px;
-  margin-left: 10px;
-  font-size: 20px;
-  color: #f38ba8;
-  background: rgba(243, 139, 168, 0.2);
-  border-radius: 6px;
-}
-
-#custom-power:hover {
-  background: rgba(243, 139, 168, 0.3);
-}
-
-#custom-power menu {
-  border-radius: 15px;
-  background: #161320;
-  color: #B5E8E0;
-}
-
-#custom-power menuitem {
-  border-radius: 15px;
-}
