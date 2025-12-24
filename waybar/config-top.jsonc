@@ -14,7 +14,8 @@
     "~/.config/waybar/modules/media.json",
     "~/.config/waybar/modules/custom-modules.json",
     "~/.config/waybar/modules/power.json",
-    "~/.config/waybar/modules/tray.json"
+    "~/.config/waybar/modules/tray.json",
+    "~/.config/waybar/modules/temperature.json"
   ],
 
   // Layout: Left | Center | Right
@@ -28,8 +29,10 @@
   ],
 
   "modules-right": [
-    "group/utilities",
+    "temperature#cpu",
+    "temperature#gpu",
     "group/system",
+    "group/utilities",
     "network"
   ],
 
@@ -43,15 +46,6 @@
       "cpu",
       "memory",
       "disk"
-    ]
-  },
-
-  "group/audio": {
-    "orientation": "inherit",
-    "modules": [
-      "pulseaudio#input",
-      "pulseaudio#output",
-      "pulseaudio/slider"
     ]
   },
 

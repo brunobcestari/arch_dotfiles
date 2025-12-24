@@ -58,6 +58,7 @@ cd ~/gitrepos/arch_dotfiles
    cp -r waybar ~/.config/
    cp -r mako ~/.config/
    cp -r alacritty ~/.config/
+   cp -r rofi ~/.config/
    ```
 
 3. **Install SDDM configs** (requires sudo):
@@ -96,6 +97,27 @@ cd ~/gitrepos/arch_dotfiles
 - `XF86AudioPlay/Pause` - Media control
 
 ## 🎨 Customization
+
+### Hyprland
+
+**Modular Configuration Structure:**
+The Hyprland configuration is organized into separate files for better maintainability:
+
+- **hyprland.conf** - Main config that sources all modules
+- **monitors.conf** - Display and monitor setup
+- **programs.conf** - Default applications ($terminal, $fileManager, etc.)
+- **autostart.conf** - Startup applications (personal apps - safe to modify)
+- **environment.conf** - Environment variables (cursor size, Electron flags, etc.)
+- **look-and-feel.conf** - Appearance, decorations, animations, layouts
+- **input.conf** - Keyboard layout, mouse settings, touchpad, gestures
+- **keybindings.conf** - All keyboard shortcuts and binds
+- **rules.conf** - Window rules and workspace rules
+
+**Benefits:**
+- 📝 Easy to share core config without personal apps
+- 🔧 Modify sections independently
+- 📚 Clear organization and documentation
+- ⚠️ Safe to skip autostart.conf if apps aren't installed
 
 ### Waybar
 
@@ -150,6 +172,16 @@ The Waybar configuration uses a modular approach inspired by the HyDE project, w
 - Time, date, and password input
 - Config: `hypr/hyprlock.conf`
 
+### Rofi
+- **Application Launcher**: Shows desktop applications by default
+- **Mode Switching**: Cycle through modes with Ctrl+Tab (Applications → Windows → Run → SSH)
+- **Custom Theme**: Catppuccin-inspired design matching Waybar
+  - Same dark background (#1A1B26) and cyan accent (#33ccff)
+  - Rounded corners and clean spacing
+  - Icon support with Papirus-Dark theme
+- **Keybind**: `Super + D` to launch
+- Config: `rofi/config.rasi`
+
 ### Vim
 - **Plugins**: NERDTree (file explorer), coc.nvim (LSP/completion), colorschemes
 - **Theme**: Deus colorscheme
@@ -193,6 +225,7 @@ arch_dotfiles/
 │       └── updates.sh           # System update checker
 ├── mako/                  # Notification daemon
 ├── alacritty/             # Terminal emulator
+├── rofi/                  # Application launcher
 ├── sddm/                  # Display manager configs
 ├── xdg-desktop-portal/    # Portal config for screen sharing
 ├── vim/                   # Vim configuration & plugins

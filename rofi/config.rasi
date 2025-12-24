@@ -1,0 +1,94 @@
+configuration {
+    modes: "drun,window,run,ssh";
+    show-icons: true;
+    icon-theme: "Papirus-Dark";
+    display-drun: "Applications";
+    display-window: "Windows";
+    display-run: "Run";
+    display-ssh: "SSH";
+    drun-display-format: "{name}";
+    font: "JetBrainsMono Nerd Font 12";
+
+    timeout {
+        action: "kb-cancel";
+        delay:  0;
+    }
+}
+
+/* Catppuccin-inspired theme matching Waybar */
+* {
+    background-color: transparent;
+    text-color: #ffffff;
+}
+
+window {
+    background-color: #1A1B26F2;
+    border: 2px solid;
+    border-color: #33ccff;
+    border-radius: 8px;
+    padding: 15px;
+    width: 600px;
+}
+
+mainbox {
+    background-color: transparent;
+    spacing: 10px;
+}
+
+inputbar {
+    background-color: #33CCFF1A;
+    border: 2px solid;
+    border-color: #33ccff;
+    border-radius: 6px;
+    padding: 8px 12px;
+    spacing: 8px;
+}
+
+prompt {
+    text-color: #33ccff;
+    font: "JetBrainsMono Nerd Font Bold 12";
+}
+
+entry {
+    placeholder: "Search applications...";
+    placeholder-color: #888888;
+    text-color: #ffffff;
+}
+
+listview {
+    background-color: transparent;
+    lines: 8;
+    spacing: 4px;
+    padding: 8px 0px;
+}
+
+element {
+    background-color: transparent;
+    text-color: #cccccc;
+    border-radius: 4px;
+    padding: 8px 12px;
+}
+
+element selected {
+    background-color: #33CCFF33;
+    text-color: #33ccff;
+    border: 1px solid;
+    border-color: #33ccff;
+}
+
+element-icon {
+    size: 24px;
+    margin: 0px 10px 0px 0px;
+}
+
+element-text {
+    vertical-align: 0.5;
+}
+
+message {
+    background-color: #33CCFF1A;
+    border: 1px solid;
+    border-color: #33ccff;
+    border-radius: 6px;
+    padding: 8px;
+}

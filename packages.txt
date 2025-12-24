@@ -54,6 +54,9 @@ nodejs
 npm
 git
 
+## System Monitoring
+btop
+
 ## Optional but recommended
 brightnessctl
 playerctl

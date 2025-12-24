@@ -46,6 +46,7 @@ window#waybar {
 #pulseaudio,
 #battery,
 #tray,
+#temperature,
 #custom-weather,
 #custom-media,
 #custom-vpn,
@@ -83,6 +84,29 @@ window#waybar {
 
 #battery.charging {
     color: #66ff66;
+}
+
+/* Temperature - Normal state (< warning threshold) */
+#temperature.cpu {
+    color: #99ccff;
+}
+
+#temperature.gpu {
+    color: #99ff99;
+    margin-right: 10px;
+    border-right: 2px solid rgba(255, 255, 255, 0.2);
+    padding-right: 15px;
+}
+
+/* Temperature - Critical state (> critical threshold) */
+#temperature.cpu.critical {
+    color: #ff3333;
+    background: rgba(255, 51, 51, 0.2);
+}
+
+#temperature.gpu.critical {
+    color: #ff3333;
+    background: rgba(255, 51, 51, 0.2);
 }
 
 #battery.warning {
@@ -240,3 +264,7 @@ window#waybar {
 #custom-power menuitem {
   border-radius: 15px;
 }
+
+#temperature.critical {
+  background-color: #E42022;
+ }
