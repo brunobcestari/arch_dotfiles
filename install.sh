@@ -28,6 +28,48 @@ readonly NC='\033[0m' # No Color
 declare -A INSTALL_OPTIONAL
 
 # ============================================================================
+# Help & Usage
+# ============================================================================
+
+show_help() {
+    cat << 'EOF'
+Hyprland Dotfiles Installation Script
+
+USAGE:
+    ./install.sh [OPTIONS]
+
+OPTIONS:
+    -h, --help      Show this help message and exit
+    
+DESCRIPTION:
+    Interactive installer for Hyprland dotfiles on Arch Linux.
+    
+    The installer will:
+    - Check system requirements (Arch Linux, paru)
+    - Interactively prompt for optional package selection
+    - Backup existing configurations
+    - Install selected packages
+    - Copy configuration files
+    - Generate custom autostart.conf based on selections
+    - Set up services and system integration
+    
+REQUIREMENTS:
+    - Arch Linux
+    - paru (AUR helper)
+    
+    To install paru:
+        sudo pacman -S --needed base-devel git
+        git clone https://aur.archlinux.org/paru.git
+        cd paru && makepkg -si
+
+EXAMPLES:
+    ./install.sh            Run the interactive installer
+    ./install.sh --help     Show this help message
+
+EOF
+}
+
+# ============================================================================
 # Helper Functions
 # ============================================================================
 
@@ -522,6 +564,12 @@ show_summary() {
 }
 
 main() {
+    # Parse command line arguments
+    if [[ "${1:-}" == "-h" ]] || [[ "${1:-}" == "--help" ]]; then
+        show_help
+        exit 0
+    fi
+    
     # Set up error handling
     trap cleanup EXIT
     
@@ -554,4 +602,4 @@ main() {
 }
 
 # Run main function
-main
+main "$@"
