@@ -305,6 +305,7 @@ backup_existing_configs() {
         "$CONFIG_HOME/mako"
         "$CONFIG_HOME/alacritty"
         "$CONFIG_HOME/xdg-desktop-portal"
+        "$CONFIG_HOME/rofi"
         "$HOME/.vimrc"
         "$HOME/.bashrc"
     )
@@ -342,7 +343,7 @@ backup_existing_configs() {
 
 create_config_directories() {
     log_info "Creating config directories..."
-    mkdir -p "$CONFIG_HOME"/{hypr,waybar,mako,alacritty,xdg-desktop-portal}
+    mkdir -p "$CONFIG_HOME"/{hypr,waybar,mako,alacritty,xdg-desktop-portal,rofi}
     mkdir -p "$CONFIG_HOME/waybar"/{scripts,modules,menus}
     log_success "Config directories created"
 }
@@ -355,6 +356,11 @@ copy_configuration_files() {
     cp -r "$SCRIPT_DIR/mako"/* "$CONFIG_HOME/mako/"
     cp -r "$SCRIPT_DIR/alacritty"/* "$CONFIG_HOME/alacritty/"
     cp -r "$SCRIPT_DIR/xdg-desktop-portal"/* "$CONFIG_HOME/xdg-desktop-portal/"
+    
+    # Copy Rofi config
+    if [[ -d "$SCRIPT_DIR/rofi" ]]; then
+        cp -r "$SCRIPT_DIR/rofi"/* "$CONFIG_HOME/rofi/"
+    fi
     
     # Copy Waybar configs with modular structure
     cp "$SCRIPT_DIR/waybar/config-top.jsonc" "$CONFIG_HOME/waybar/"
