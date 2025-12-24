@@ -180,22 +180,25 @@ prompt_optional_packages() {
     # Personal applications
     echo ""
     log_info "Personal Applications (startup apps)"
-    echo "These will be added to Hyprland autostart if installed:"
+    echo "================================================================"
+    log_warning "These are proprietary/AUR apps that must be installed separately."
+    log_warning "Only answer 'yes' if you have already installed these applications."
+    echo "They will be added to Hyprland autostart if you select them."
     echo ""
     
-    if prompt_yes_no "Do you use ProtonMail Bridge?" "n"; then
+    if prompt_yes_no "Do you have ProtonMail Bridge installed?" "n"; then
         INSTALL_OPTIONAL[protonmail]="yes"
     fi
     
-    if prompt_yes_no "Do you use pCloud?" "n"; then
+    if prompt_yes_no "Do you have pCloud installed?" "n"; then
         INSTALL_OPTIONAL[pcloud]="yes"
     fi
     
-    if prompt_yes_no "Do you use Das Keyboard Q?" "n"; then
+    if prompt_yes_no "Do you have Das Keyboard Q software installed?" "n"; then
         INSTALL_OPTIONAL[daskeyboard]="yes"
     fi
     
-    if prompt_yes_no "Do you use Birdtray (Thunderbird tray icon)?" "n"; then
+    if prompt_yes_no "Do you have Birdtray (Thunderbird tray icon) installed?" "n"; then
         INSTALL_OPTIONAL[birdtray]="yes"
     fi
 }
