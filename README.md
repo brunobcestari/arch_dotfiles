@@ -40,18 +40,11 @@ Personal dotfiles for Arch Linux with Hyprland window manager.
 ### Prerequisites
 
 - **Arch Linux** with base system installed
-- **paru** AUR helper installed
-
-If you don't have paru yet:
-```bash
-sudo pacman -S --needed base-devel git
-git clone https://aur.archlinux.org/paru.git
-cd paru && makepkg -si
-```
+- **paru** AUR helper (installer can auto-install if missing)
 
 ### Quick Install (Recommended)
 
-The installer script provides an **interactive experience** where you can choose which optional packages to install:
+The installer script provides an **interactive experience** with **pacman-style group selection**:
 
 ```bash
 git clone <your-repo-url> ~/gitrepos/arch_dotfiles
@@ -60,18 +53,43 @@ cd ~/gitrepos/arch_dotfiles
 ```
 
 **The installer will:**
-1. Check system requirements (Arch Linux, paru)
-2. Prompt you to select optional packages:
-   - File manager (Thunar)
-   - Development tools (Vim, Node.js, npm, git)
-   - System monitoring (btop)
-   - Brightness control (brightnessctl - for laptops)
-   - Media player control (playerctl)
-   - Personal applications (ProtonMail Bridge, pCloud, Das Keyboard Q, Birdtray)
-3. Automatically backup existing configurations
-4. Install only the packages you selected
-5. Generate a custom `autostart.conf` with only the apps you chose
-6. Set up all configurations and enable services
+1. Check system requirements (Arch Linux)
+2. **Auto-install paru** if not present (with your confirmation)
+3. Present package groups with numbered selection (like pacman groups):
+   ```
+   File Manager
+   ================================================================
+       1) thunar - Thunar file manager
+   
+   Enter numbers separated by spaces (e.g., '1 3 4'), 'all' for all, or 'none' for none
+   Default: all [Enter to select all]:
+   ```
+4. Show you all optional packages per category:
+   - **File Manager**: Thunar
+   - **Development Tools**: Vim, Node.js, npm, git
+   - **System Monitoring**: btop
+   - **Hardware Control**: brightnessctl, playerctl
+   - **Personal Applications**: ProtonMail Bridge, pCloud, Das Keyboard Q, Birdtray
+5. Automatically backup existing configurations
+6. Install only the packages you selected
+7. Generate custom `autostart.conf` with startup commands for selected personal apps
+8. Set up all configurations and enable services
+
+### Configuration File
+
+Optional packages are now defined in `optional-apps.conf`:
+
+```
+# Format: category|name|description|startup_command|autostart
+filemanager|thunar|Thunar file manager||no
+development|vim|Vim text editor with plugins||no
+personal|protonmail-bridge|ProtonMail Bridge|protonmail-bridge|yes
+```
+
+This makes it easy to:
+- Add new optional packages
+- Define startup commands in one place
+- Control which apps autostart on login
 
 ### Manual Install
 
@@ -109,13 +127,16 @@ If you prefer manual control, you can install components individually:
 
 The `install.sh` script includes several modern bash best practices:
 
-- **Interactive Package Selection**: Choose exactly what you need
+- **Auto-install paru**: Automatically builds and installs paru if not present
+- **Config-file-based**: Optional packages defined in `optional-apps.conf` with startup commands
+- **Pacman-style Selection**: Group-based selection with numbered lists (like pacman package groups)
+- **Interactive Package Selection**: Choose exactly what you need with 'all', 'none', or specific numbers
 - **Automatic Backups**: Creates timestamped backups before overwriting configs
 - **Error Handling**: Uses `set -euo pipefail` and trap for robust error handling
 - **Colored Logging**: Clear status messages with color-coded output
 - **Shellcheck Compliant**: Passes shellcheck with no errors or warnings
 - **Modular Functions**: Well-organized code with single-responsibility functions
-- **Dynamic Configuration**: Generates `autostart.conf` based on your selections
+- **Dynamic Configuration**: Generates `autostart.conf` based on your selections with startup commands from config
 - **Safe Operations**: Confirmation prompts for destructive operations
 - **Brand New Install Ready**: Perfect for fresh Arch Linux installations
 
