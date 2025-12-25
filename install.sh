@@ -119,6 +119,34 @@ cleanup() {
 # Validation Functions
 # ============================================================================
 
+install_paru() {
+    log_info "Installing paru AUR helper..."
+    
+    # Check for required dependencies
+    if ! command -v git &> /dev/null || ! command -v make &> /dev/null; then
+        log_info "Installing base-devel and git..."
+        sudo pacman -S --needed --noconfirm base-devel git
+    fi
+    
+    # Clone and build paru
+    local temp_dir
+    temp_dir=$(mktemp -d)
+    cd "$temp_dir" || exit 1
+    
+    log_info "Downloading paru from AUR..."
+    git clone https://aur.archlinux.org/paru.git
+    cd paru || exit 1
+    
+    log_info "Building and installing paru..."
+    makepkg -si --noconfirm
+    
+    # Cleanup
+    cd "$HOME" || exit 1
+    rm -rf "$temp_dir"
+    
+    log_success "paru installed successfully"
+}
+
 check_requirements() {
     log_info "Checking system requirements..."
     
@@ -130,13 +158,14 @@ check_requirements() {
     
     # Check if paru is installed
     if ! command -v paru &> /dev/null; then
-        log_error "paru not found. Please install paru first."
+        log_warning "paru AUR helper is not installed"
         echo ""
-        echo "Install paru with:"
-        echo "  sudo pacman -S --needed base-devel git"
-        echo "  git clone https://aur.archlinux.org/paru.git"
-        echo "  cd paru && makepkg -si"
-        exit 1
+        if prompt_yes_no "Would you like to install paru now?" "y"; then
+            install_paru
+        else
+            log_error "paru is required to continue. Exiting."
+            exit 1
+        fi
     fi
     
     log_success "System requirements met"
@@ -146,61 +175,135 @@ check_requirements() {
 # Package Selection Functions
 # ============================================================================
 
+# Arrays to store app information
+declare -A APP_CATEGORIES
+declare -A APP_NAMES
+declare -A APP_DESCRIPTIONS
+declare -A APP_STARTUP_CMDS
+declare -A APP_AUTOSTART
+declare -a APP_ORDER
+
+load_optional_apps() {
+    local config_file="$SCRIPT_DIR/optional-apps.conf"
+    
+    if [[ ! -f "$config_file" ]]; then
+        log_error "Configuration file not found: $config_file"
+        exit 1
+    fi
+    
+    local idx=0
+    while IFS='|' read -r category name description startup_cmd autostart; do
+        # Skip comments and empty lines
+        [[ "$category" =~ ^#.*$ ]] && continue
+        [[ -z "$category" ]] && continue
+        
+        local key="${category}_${name}"
+        APP_CATEGORIES[$key]="$category"
+        APP_NAMES[$key]="$name"
+        APP_DESCRIPTIONS[$key]="$description"
+        APP_STARTUP_CMDS[$key]="$startup_cmd"
+        APP_AUTOSTART[$key]="$autostart"
+        APP_ORDER[idx]="$key"
+        ((idx++))
+    done < "$config_file"
+}
+
+prompt_category_selection() {
+    local category="$1"
+    local category_display="$2"
+    local default_install="$3"
+    local is_personal="${4:-no}"
+    
+    # Get all apps in this category
+    local apps=()
+    local app_list=""
+    local count=0
+    
+    for key in "${APP_ORDER[@]}"; do
+        if [[ "${APP_CATEGORIES[$key]}" == "$category" ]]; then
+            apps+=("$key")
+            ((count++))
+            app_list+="    $count) ${APP_NAMES[$key]}"
+            if [[ -n "${APP_DESCRIPTIONS[$key]}" ]]; then
+                app_list+=" - ${APP_DESCRIPTIONS[$key]}"
+            fi
+            app_list+=$'\n'
+        fi
+    done
+    
+    if [[ $count -eq 0 ]]; then
+        return
+    fi
+    
+    echo ""
+    log_info "$category_display"
+    echo "================================================================"
+    
+    if [[ "$is_personal" == "yes" ]]; then
+        log_warning "These apps must be installed separately (proprietary/AUR)."
+        log_warning "Only select if already installed on your system."
+        echo ""
+    fi
+    
+    echo -e "$app_list"
+    
+    # Ask for selection
+    echo "Enter numbers separated by spaces (e.g., '1 3 4'), 'all' for all, or 'none' for none"
+    if [[ "$default_install" == "all" ]]; then
+        echo -n "Default: all [Enter to select all]: "
+    else
+        echo -n "Selection: "
+    fi
+    
+    read -r selection
+    
+    # Handle empty input (default)
+    if [[ -z "$selection" ]] && [[ "$default_install" == "all" ]]; then
+        selection="all"
+    fi
+    
+    # Process selection
+    if [[ "$selection" == "all" ]]; then
+        for key in "${apps[@]}"; do
+            INSTALL_OPTIONAL[$key]="yes"
+        done
+    elif [[ "$selection" != "none" ]]; then
+        # Parse number selection
+        for num in $selection; do
+            if [[ "$num" =~ ^[0-9]+$ ]] && [[ $num -ge 1 ]] && [[ $num -le $count ]]; then
+                local idx=$((num - 1))
+                INSTALL_OPTIONAL[${apps[$idx]}]="yes"
+            fi
+        done
+    fi
+}
+
 prompt_optional_packages() {
+    load_optional_apps
+    
     echo ""
     log_info "Optional Package Selection"
     echo "================================================================"
+    echo "Select which optional packages you want to install."
     echo ""
     
-    # File manager
-    if prompt_yes_no "Install Thunar file manager?" "y"; then
-        INSTALL_OPTIONAL[thunar]="yes"
-    fi
+    # File Manager
+    prompt_category_selection "filemanager" "File Manager" "all" "no"
     
-    # Development tools
-    if prompt_yes_no "Install development tools (Vim with plugins, Node.js, npm, git)?" "y"; then
-        INSTALL_OPTIONAL[development]="yes"
-    fi
+    # Development Tools
+    prompt_category_selection "development" "Development Tools" "all" "no"
     
-    # System monitoring
-    if prompt_yes_no "Install btop system monitor?" "y"; then
-        INSTALL_OPTIONAL[btop]="yes"
-    fi
+    # System Monitoring
+    prompt_category_selection "monitoring" "System Monitoring" "all" "no"
     
-    # Brightness control
-    if prompt_yes_no "Install brightnessctl (laptop brightness control)?" "y"; then
-        INSTALL_OPTIONAL[brightnessctl]="yes"
-    fi
+    # Hardware Control
+    prompt_category_selection "hardware" "Hardware Control" "all" "no"
     
-    # Media player control
-    if prompt_yes_no "Install playerctl (media player control)?" "y"; then
-        INSTALL_OPTIONAL[playerctl]="yes"
-    fi
+    # Personal Applications
+    prompt_category_selection "personal" "Personal Applications (Startup Apps)" "none" "yes"
     
-    # Personal applications
     echo ""
-    log_info "Personal Applications (startup apps)"
-    echo "================================================================"
-    log_warning "These are proprietary/AUR apps that must be installed separately."
-    log_warning "Only answer 'yes' if you have already installed these applications."
-    echo "They will be added to Hyprland autostart if you select them."
-    echo ""
-    
-    if prompt_yes_no "Do you have ProtonMail Bridge installed?" "n"; then
-        INSTALL_OPTIONAL[protonmail]="yes"
-    fi
-    
-    if prompt_yes_no "Do you have pCloud installed?" "n"; then
-        INSTALL_OPTIONAL[pcloud]="yes"
-    fi
-    
-    if prompt_yes_no "Do you have Das Keyboard Q software installed?" "n"; then
-        INSTALL_OPTIONAL[daskeyboard]="yes"
-    fi
-    
-    if prompt_yes_no "Do you have Birdtray (Thunderbird tray icon) installed?" "n"; then
-        INSTALL_OPTIONAL[birdtray]="yes"
-    fi
+    log_info "Selection complete!"
 }
 
 install_packages() {
@@ -257,30 +360,17 @@ noto-fonts-emoji
 EOF
     
     # Add optional packages based on user selection
-    if [[ "${INSTALL_OPTIONAL[thunar]:-}" == "yes" ]]; then
-        echo "thunar" >> "$temp_packages"
-    fi
-    
-    if [[ "${INSTALL_OPTIONAL[development]:-}" == "yes" ]]; then
-        {
-            echo "vim"
-            echo "nodejs"
-            echo "npm"
-            echo "git"
-        } >> "$temp_packages"
-    fi
-    
-    if [[ "${INSTALL_OPTIONAL[btop]:-}" == "yes" ]]; then
-        echo "btop" >> "$temp_packages"
-    fi
-    
-    if [[ "${INSTALL_OPTIONAL[brightnessctl]:-}" == "yes" ]]; then
-        echo "brightnessctl" >> "$temp_packages"
-    fi
-    
-    if [[ "${INSTALL_OPTIONAL[playerctl]:-}" == "yes" ]]; then
-        echo "playerctl" >> "$temp_packages"
-    fi
+    for key in "${APP_ORDER[@]}"; do
+        if [[ "${INSTALL_OPTIONAL[$key]:-}" == "yes" ]]; then
+            local name="${APP_NAMES[$key]}"
+            local category="${APP_CATEGORIES[$key]}"
+            
+            # Skip personal apps as they must be installed separately
+            if [[ "$category" != "personal" ]]; then
+                echo "$name" >> "$temp_packages"
+            fi
+        fi
+    done
     
     # Install packages
     log_info "Installing selected packages with paru..."
@@ -395,32 +485,31 @@ generate_autostart_config() {
 
 EOF
     
-    # Add personal applications based on user selection
+    # Add applications based on user selection
     local has_personal_apps=false
     
-    if [[ "${INSTALL_OPTIONAL[protonmail]:-}" == "yes" ]]; then
-        echo "# ProtonMail Bridge" >> "$autostart_file"
-        echo "exec-once = protonmail-bridge" >> "$autostart_file"
-        has_personal_apps=true
-    fi
-    
-    if [[ "${INSTALL_OPTIONAL[pcloud]:-}" == "yes" ]]; then
-        echo "# pCloud" >> "$autostart_file"
-        echo "exec-once = env DESKTOPINTEGRATION=false /usr/bin/pcloud" >> "$autostart_file"
-        has_personal_apps=true
-    fi
-    
-    if [[ "${INSTALL_OPTIONAL[daskeyboard]:-}" == "yes" ]]; then
-        echo "# Das Keyboard Q" >> "$autostart_file"
-        echo "exec-once = das-keyboard-q %U" >> "$autostart_file"
-        has_personal_apps=true
-    fi
-    
-    if [[ "${INSTALL_OPTIONAL[birdtray]:-}" == "yes" ]]; then
-        echo "# Birdtray (Thunderbird system tray)" >> "$autostart_file"
-        echo "exec-once = gtk-launch /usr/share/applications/com.ulduzsoft.Birdtray.desktop" >> "$autostart_file"
-        has_personal_apps=true
-    fi
+    for key in "${APP_ORDER[@]}"; do
+        if [[ "${INSTALL_OPTIONAL[$key]:-}" == "yes" ]]; then
+            local autostart="${APP_AUTOSTART[$key]}"
+            
+            if [[ "$autostart" == "yes" ]]; then
+                local name="${APP_NAMES[$key]}"
+                local startup_cmd="${APP_STARTUP_CMDS[$key]}"
+                local description="${APP_DESCRIPTIONS[$key]}"
+                
+                # Add comment with description
+                if [[ -n "$description" ]]; then
+                    echo "# $description" >> "$autostart_file"
+                else
+                    echo "# $name" >> "$autostart_file"
+                fi
+                
+                # Add startup command
+                echo "exec-once = $startup_cmd" >> "$autostart_file"
+                has_personal_apps=true
+            fi
+        fi
+    done
     
     if [[ "$has_personal_apps" == "true" ]]; then
         echo "" >> "$autostart_file"
@@ -471,7 +560,16 @@ install_sddm_configs() {
 }
 
 setup_vim() {
-    if [[ "${INSTALL_OPTIONAL[development]:-}" != "yes" ]]; then
+    # Check if vim was selected
+    local vim_selected=false
+    for key in "${APP_ORDER[@]}"; do
+        if [[ "${APP_CATEGORIES[$key]}" == "development" ]] && [[ "${APP_NAMES[$key]}" == "vim" ]] && [[ "${INSTALL_OPTIONAL[$key]:-}" == "yes" ]]; then
+            vim_selected=true
+            break
+        fi
+    done
+    
+    if [[ "$vim_selected" == "false" ]]; then
         log_info "Skipping Vim setup (not selected)"
         return
     fi
@@ -541,21 +639,54 @@ show_summary() {
     echo "  ✓ Hyprland with Waybar, Mako, Hyprlock"
     echo "  ✓ Alacritty terminal with Tokyo Night theme"
     
-    if [[ "${INSTALL_OPTIONAL[development]:-}" == "yes" ]]; then
-        echo "  ✓ Vim with NERDTree, coc.nvim, and colorschemes"
-    fi
+    # Check if vim is installed
+    for key in "${APP_ORDER[@]}"; do
+        if [[ "${APP_CATEGORIES[$key]}" == "development" ]] && [[ "${APP_NAMES[$key]}" == "vim" ]] && [[ "${INSTALL_OPTIONAL[$key]:-}" == "yes" ]]; then
+            echo "  ✓ Vim with NERDTree, coc.nvim, and colorschemes"
+            break
+        fi
+    done
     
     echo "  ✓ Custom colorful bash prompt with git branch"
     echo "  ✓ PipeWire audio with GTK device selector popups"
     echo "  ✓ Weather widget with interactive forecast popup"
     
-    if [[ "${INSTALL_OPTIONAL[thunar]:-}" == "yes" ]]; then
-        echo "  ✓ Thunar file manager"
-    fi
+    # List other installed optional packages
+    for key in "${APP_ORDER[@]}"; do
+        if [[ "${INSTALL_OPTIONAL[$key]:-}" == "yes" ]]; then
+            local name="${APP_NAMES[$key]}"
+            local description="${APP_DESCRIPTIONS[$key]}"
+            local category="${APP_CATEGORIES[$key]}"
+            
+            # Skip vim (already shown above) and personal apps
+            if [[ "$name" != "vim" ]] && [[ "$category" != "personal" ]]; then
+                if [[ -n "$description" ]]; then
+                    echo "  ✓ $description"
+                else
+                    echo "  ✓ $name"
+                fi
+            fi
+        fi
+    done
     
-    if [[ "${INSTALL_OPTIONAL[btop]:-}" == "yes" ]]; then
-        echo "  ✓ btop system monitor"
-    fi
+    # Show personal apps with autostart
+    local has_autostart=false
+    for key in "${APP_ORDER[@]}"; do
+        if [[ "${INSTALL_OPTIONAL[$key]:-}" == "yes" ]] && [[ "${APP_AUTOSTART[$key]}" == "yes" ]]; then
+            if [[ "$has_autostart" == "false" ]]; then
+                echo ""
+                echo "Autostart apps:"
+                has_autostart=true
+            fi
+            local description="${APP_DESCRIPTIONS[$key]}"
+            local name="${APP_NAMES[$key]}"
+            if [[ -n "$description" ]]; then
+                echo "  ✓ $description"
+            else
+                echo "  ✓ $name"
+            fi
+        fi
+    done
     
     echo ""
     echo "Keybindings:"
