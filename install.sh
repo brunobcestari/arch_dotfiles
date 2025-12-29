@@ -7,15 +7,39 @@ set -euo pipefail
 # Configuration Variables
 # ============================================================================
 
-SCRIPT_DIR=""
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly SCRIPT_DIR
 
 readonly CONFIG_HOME="${HOME}/.config"
 
-BACKUP_DIR=""
+# Backup directory (can be overridden with --backup-dir)
 BACKUP_DIR="${HOME}/.config-backup-$(date +%Y%m%d-%H%M%S)"
-readonly BACKUP_DIR
+
+# ============================================================================
+# Dotfiles Configuration
+# ============================================================================
+# Add new dotfiles here to have them automatically installed
+
+# Standard config directories (source -> ~/.config/destination)
+# Format: "source_dir:destination_dir" or just "dir" if source and dest are the same
+readonly CONFIG_DIRS=(
+    "hypr"
+    "mako"
+    "alacritty"
+    "xdg-desktop-portal"
+    "rofi"
+)
+
+# Home directory files (source -> ~/destination)
+# Format: "source_path:destination_filename"
+readonly HOME_FILES=(
+    "vim/vimrc:.vimrc"
+)
+
+# Conditional configs (package_name:source_dir:dest_dir)
+readonly CONDITIONAL_CONFIGS=(
+    "workstyle-git:workstyle:workstyle"
+)
 
 # Colors
 readonly GREEN='\033[0;32m'
@@ -23,6 +47,9 @@ readonly BLUE='\033[0;34m'
 readonly YELLOW='\033[1;33m'
 readonly RED='\033[0;31m'
 readonly NC='\033[0m' # No Color
+
+# Dry-run mode
+DRY_RUN=false
 
 # User choices
 declare -A INSTALL_OPTIONAL
@@ -39,7 +66,9 @@ USAGE:
     ./install.sh [OPTIONS]
 
 OPTIONS:
-    -h, --help      Show this help message and exit
+    -h, --help              Show this help message and exit
+    -d, --dry-run           Show what would be done without making changes
+    -b, --backup-dir DIR    Specify custom backup directory (default: ~/.config-backup-YYYYMMDD-HHMMSS)
 
 DESCRIPTION:
     Installer for Hyprland dotfiles on Arch Linux.
@@ -64,8 +93,10 @@ REQUIREMENTS:
     - paru (AUR helper) - will be auto-installed if missing
 
 EXAMPLES:
-    ./install.sh            Run the installer
-    ./install.sh --help     Show this help message
+    ./install.sh                              Run the installer
+    ./install.sh --dry-run                    Preview what would be installed
+    ./install.sh --backup-dir ~/my-backups    Use custom backup directory
+    ./install.sh --help                       Show this help message
 
 EOF
 }
@@ -73,6 +104,15 @@ EOF
 # ============================================================================
 # Helper Functions
 # ============================================================================
+
+run_cmd() {
+    if [[ "$DRY_RUN" == "true" ]]; then
+        echo -e "${YELLOW}[DRY-RUN]${NC} Would run: $*"
+        return 0
+    else
+        "$@"
+    fi
+}
 
 log_info() {
     echo -e "${BLUE}[INFO]${NC} $*"
@@ -170,6 +210,59 @@ check_requirements() {
     fi
     
     log_success "System requirements met"
+}
+
+verify_source_structure() {
+    log_info "Verifying dotfiles structure..."
+
+    local missing=()
+
+    # Check essential files
+    local essential_files=(
+        "$SCRIPT_DIR/packages.txt"
+        "$SCRIPT_DIR/optional-apps.conf"
+        "$SCRIPT_DIR/waybar"
+        "$SCRIPT_DIR/sddm"
+        "$SCRIPT_DIR/ps1/custom_ps1.sh"
+    )
+
+    for item in "${essential_files[@]}"; do
+        if [[ ! -e "$item" ]]; then
+            missing+=("$item")
+        fi
+    done
+
+    # Check config directories
+    for dir in "${CONFIG_DIRS[@]}"; do
+        local source_dir="${dir%%:*}"  # Get part before : if exists
+        if [[ ! -d "$SCRIPT_DIR/$source_dir" ]]; then
+            missing+=("$SCRIPT_DIR/$source_dir")
+        fi
+    done
+
+    # Check home files
+    for file_mapping in "${HOME_FILES[@]}"; do
+        local source_file="${file_mapping%%:*}"
+        if [[ ! -f "$SCRIPT_DIR/$source_file" ]]; then
+            missing+=("$SCRIPT_DIR/$source_file")
+        fi
+    done
+
+    # Check conditional configs (these might not exist, so just warn)
+    for config in "${CONDITIONAL_CONFIGS[@]}"; do
+        local source_dir="$(echo "$config" | cut -d: -f2)"
+        if [[ ! -d "$SCRIPT_DIR/$source_dir" ]]; then
+            log_warning "Optional config not found: $SCRIPT_DIR/$source_dir (will skip if selected)"
+        fi
+    done
+
+    if [[ ${#missing[@]} -gt 0 ]]; then
+        log_error "Missing required files/directories:"
+        printf '  %s\n' "${missing[@]}"
+        exit 1
+    fi
+
+    log_success "Dotfiles structure verified"
 }
 
 # ============================================================================
@@ -396,12 +489,17 @@ install_packages() {
     # Install packages
     echo ""
     log_info "Installing packages with paru..."
-    if paru -S --needed - < "$temp_packages"; then
-        log_success "Packages installed successfully"
+    if [[ "$DRY_RUN" == "true" ]]; then
+        echo -e "${YELLOW}[DRY-RUN]${NC} Would install packages:"
+        cat "$temp_packages" | sed 's/^/  - /'
     else
-        log_error "Package installation failed"
-        rm -f "$temp_packages"
-        exit 1
+        if paru -S --needed - < "$temp_packages"; then
+            log_success "Packages installed successfully"
+        else
+            log_error "Package installation failed"
+            rm -f "$temp_packages"
+            exit 1
+        fi
     fi
 
     rm -f "$temp_packages"
@@ -413,18 +511,35 @@ install_packages() {
 
 backup_existing_configs() {
     log_info "Backing up existing configurations..."
-    
-    local configs_to_backup=(
-        "$CONFIG_HOME/hypr"
-        "$CONFIG_HOME/waybar"
-        "$CONFIG_HOME/mako"
-        "$CONFIG_HOME/alacritty"
-        "$CONFIG_HOME/xdg-desktop-portal"
-        "$CONFIG_HOME/rofi"
-        "$HOME/.vimrc"
-        "$HOME/.bashrc"
-    )
-    
+
+    local configs_to_backup=()
+
+    # Add config directories
+    for dir in "${CONFIG_DIRS[@]}"; do
+        local dest_dir="${dir##*:}"  # Get part after : if exists, otherwise whole string
+        configs_to_backup+=("$CONFIG_HOME/$dest_dir")
+    done
+
+    # Add waybar (special case, always backed up)
+    configs_to_backup+=("$CONFIG_HOME/waybar")
+
+    # Add home files
+    for file_mapping in "${HOME_FILES[@]}"; do
+        local dest_file="${file_mapping##*:}"
+        configs_to_backup+=("$HOME/$dest_file")
+    done
+
+    # Add .bashrc (for PS1 modifications)
+    configs_to_backup+=("$HOME/.bashrc")
+
+    # Add conditional configs if they exist
+    for config in "${CONDITIONAL_CONFIGS[@]}"; do
+        local dest_dir="$(echo "$config" | cut -d: -f3)"
+        if [[ -e "$CONFIG_HOME/$dest_dir" ]]; then
+            configs_to_backup+=("$CONFIG_HOME/$dest_dir")
+        fi
+    done
+
     local needs_backup=false
     for config in "${configs_to_backup[@]}"; do
         if [[ -e "$config" ]]; then
@@ -434,61 +549,141 @@ backup_existing_configs() {
     done
     
     if [[ "$needs_backup" == "true" ]]; then
-        if ! prompt_yes_no "Existing configurations found. Create backup?" "y"; then
-            if ! prompt_yes_no "Continue without backup? (existing configs will be overwritten)" "n"; then
-                log_info "Installation cancelled by user"
-                exit 0
+        if [[ "$DRY_RUN" == "false" ]]; then
+            if ! prompt_yes_no "Existing configurations found. Create backup?" "y"; then
+                if ! prompt_yes_no "Continue without backup? (existing configs will be overwritten)" "n"; then
+                    log_info "Installation cancelled by user"
+                    exit 0
+                fi
+                return
             fi
-            return
         fi
-        
-        mkdir -p "$BACKUP_DIR"
-        for config in "${configs_to_backup[@]}"; do
-            if [[ -e "$config" ]]; then
-                local parent_dir
-                parent_dir="$(dirname "$config")"
-                local backup_parent="$BACKUP_DIR${parent_dir#"$HOME"}"
-                mkdir -p "$backup_parent"
-                cp -r "$config" "$backup_parent/" 2>/dev/null || true
-            fi
-        done
-        log_success "Backup created at: $BACKUP_DIR"
+
+        if [[ "$DRY_RUN" == "true" ]]; then
+            echo -e "${YELLOW}[DRY-RUN]${NC} Would create backup at: $BACKUP_DIR"
+            echo -e "${YELLOW}[DRY-RUN]${NC} Would backup:"
+            for config in "${configs_to_backup[@]}"; do
+                if [[ -e "$config" ]]; then
+                    echo "  - $config"
+                fi
+            done
+        else
+            mkdir -p "$BACKUP_DIR"
+            for config in "${configs_to_backup[@]}"; do
+                if [[ -e "$config" ]]; then
+                    local parent_dir
+                    parent_dir="$(dirname "$config")"
+                    local backup_parent="$BACKUP_DIR${parent_dir#"$HOME"}"
+                    mkdir -p "$backup_parent"
+                    cp -r "$config" "$backup_parent/" 2>/dev/null || true
+                fi
+            done
+            log_success "Backup created at: $BACKUP_DIR"
+        fi
     fi
 }
 
 create_config_directories() {
     log_info "Creating config directories..."
-    mkdir -p "$CONFIG_HOME"/{hypr,waybar,mako,alacritty,xdg-desktop-portal,rofi}
-    mkdir -p "$CONFIG_HOME/waybar"/{scripts,modules,menus}
+
+    # Create main config directory
+    run_cmd mkdir -p "$CONFIG_HOME"
+
+    # Create standard config directories
+    for dir in "${CONFIG_DIRS[@]}"; do
+        local dest_dir="${dir##*:}"  # Get destination (after :) or whole string
+        run_cmd mkdir -p "$CONFIG_HOME/$dest_dir"
+    done
+
+    # Create waybar (special case with subdirectories)
+    run_cmd mkdir -p "$CONFIG_HOME/waybar"/{scripts,modules,menus}
+
+    # Create conditional config directories if selected
+    for config in "${CONDITIONAL_CONFIGS[@]}"; do
+        local package_name="$(echo "$config" | cut -d: -f1)"
+        local dest_dir="$(echo "$config" | cut -d: -f3)"
+
+        # Check if this package was selected
+        local package_selected=false
+        for key in "${APP_ORDER[@]}"; do
+            if [[ "${APP_NAMES[$key]}" == "$package_name" ]] && [[ "${INSTALL_OPTIONAL[$key]:-}" == "yes" ]]; then
+                package_selected=true
+                break
+            fi
+        done
+
+        if [[ "$package_selected" == "true" ]]; then
+            run_cmd mkdir -p "$CONFIG_HOME/$dest_dir"
+        fi
+    done
+
     log_success "Config directories created"
 }
 
 copy_configuration_files() {
     log_info "Copying configuration files..."
-    
-    # Copy core configs
-    cp -r "$SCRIPT_DIR/hypr"/* "$CONFIG_HOME/hypr/"
-    cp -r "$SCRIPT_DIR/mako"/* "$CONFIG_HOME/mako/"
-    cp -r "$SCRIPT_DIR/alacritty"/* "$CONFIG_HOME/alacritty/"
-    cp -r "$SCRIPT_DIR/xdg-desktop-portal"/* "$CONFIG_HOME/xdg-desktop-portal/"
-    
-    # Copy Rofi config
-    if [[ -d "$SCRIPT_DIR/rofi" ]]; then
-        cp -r "$SCRIPT_DIR/rofi"/* "$CONFIG_HOME/rofi/"
+
+    # Copy standard config directories
+    for dir in "${CONFIG_DIRS[@]}"; do
+        local source_dir="${dir%%:*}"  # Get source (before :) or whole string
+        local dest_dir="${dir##*:}"    # Get destination (after :) or whole string
+
+        if [[ -d "$SCRIPT_DIR/$source_dir" ]]; then
+            run_cmd cp -r "$SCRIPT_DIR/$source_dir"/* "$CONFIG_HOME/$dest_dir/"
+            log_info "Copied $source_dir config"
+        fi
+    done
+
+    # Copy Waybar configs with modular structure (special case)
+    run_cmd cp "$SCRIPT_DIR/waybar"/config-*.jsonc "$CONFIG_HOME/waybar/"
+    run_cmd cp "$SCRIPT_DIR/waybar/style.css" "$CONFIG_HOME/waybar/"
+    run_cmd cp -r "$SCRIPT_DIR/waybar/scripts"/* "$CONFIG_HOME/waybar/scripts/"
+    run_cmd cp -r "$SCRIPT_DIR/waybar/modules"/* "$CONFIG_HOME/waybar/modules/"
+    if [[ "$DRY_RUN" == "true" ]]; then
+        echo -e "${YELLOW}[DRY-RUN]${NC} Would run: cp -r $SCRIPT_DIR/waybar/menus/* $CONFIG_HOME/waybar/menus/"
+    else
+        cp -r "$SCRIPT_DIR/waybar/menus"/* "$CONFIG_HOME/waybar/menus/" 2>/dev/null || true
     fi
-    
-    # Copy Waybar configs with modular structure
-    cp "$SCRIPT_DIR/waybar/config-top.jsonc" "$CONFIG_HOME/waybar/"
-    cp "$SCRIPT_DIR/waybar/config-bottom.jsonc" "$CONFIG_HOME/waybar/"
-    cp "$SCRIPT_DIR/waybar/style.css" "$CONFIG_HOME/waybar/"
-    cp -r "$SCRIPT_DIR/waybar/scripts"/* "$CONFIG_HOME/waybar/scripts/"
-    cp -r "$SCRIPT_DIR/waybar/modules"/* "$CONFIG_HOME/waybar/modules/"
-    cp -r "$SCRIPT_DIR/waybar/menus"/* "$CONFIG_HOME/waybar/menus/" 2>/dev/null || true
-    
+
     # Make waybar scripts executable
-    chmod +x "$CONFIG_HOME/waybar/scripts"/*.sh 2>/dev/null || true
-    chmod +x "$CONFIG_HOME/waybar/scripts"/*.py 2>/dev/null || true
-    
+    run_cmd chmod +x "$CONFIG_HOME/waybar/scripts"/*.sh
+    run_cmd chmod +x "$CONFIG_HOME/waybar/scripts"/*.py
+    log_info "Copied waybar config"
+
+    # Copy home directory files
+    for file_mapping in "${HOME_FILES[@]}"; do
+        local source_file="${file_mapping%%:*}"
+        local dest_file="${file_mapping##*:}"
+
+        if [[ -f "$SCRIPT_DIR/$source_file" ]]; then
+            run_cmd cp "$SCRIPT_DIR/$source_file" "$HOME/$dest_file"
+            log_info "Copied $dest_file to home directory"
+        fi
+    done
+
+    # Copy conditional configs if selected
+    for config in "${CONDITIONAL_CONFIGS[@]}"; do
+        local package_name="$(echo "$config" | cut -d: -f1)"
+        local source_dir="$(echo "$config" | cut -d: -f2)"
+        local dest_dir="$(echo "$config" | cut -d: -f3)"
+
+        # Check if this package was selected
+        local package_selected=false
+        for key in "${APP_ORDER[@]}"; do
+            if [[ "${APP_NAMES[$key]}" == "$package_name" ]] && [[ "${INSTALL_OPTIONAL[$key]:-}" == "yes" ]]; then
+                package_selected=true
+                break
+            fi
+        done
+
+        if [[ "$package_selected" == "true" ]]; then
+            if [[ -d "$SCRIPT_DIR/$source_dir" ]]; then
+                run_cmd cp -r "$SCRIPT_DIR/$source_dir"/* "$CONFIG_HOME/$dest_dir/"
+                log_info "Copied $source_dir config"
+            fi
+        fi
+    done
+
     log_success "Configuration files copied"
 }
 
@@ -552,14 +747,28 @@ EOF
 
 install_sddm_configs() {
     log_info "Installing SDDM configs (requires sudo)..."
-    
+
+    if [[ "$DRY_RUN" == "true" ]]; then
+        echo -e "${YELLOW}[DRY-RUN]${NC} Would run: sudo mkdir -p /etc/sddm.conf.d"
+        for conf_file in "$SCRIPT_DIR/sddm"/*.conf; do
+            if [[ -f "$conf_file" ]]; then
+                echo -e "${YELLOW}[DRY-RUN]${NC} Would run: sudo cp $conf_file /etc/sddm.conf.d/"
+            fi
+        done
+        if [[ -f "$SCRIPT_DIR/sddm/Xsetup" ]]; then
+            echo -e "${YELLOW}[DRY-RUN]${NC} Would run: sudo cp $SCRIPT_DIR/sddm/Xsetup /usr/share/sddm/scripts/Xsetup"
+            echo -e "${YELLOW}[DRY-RUN]${NC} Would run: sudo chmod +x /usr/share/sddm/scripts/Xsetup"
+        fi
+        return
+    fi
+
     if ! sudo -v; then
         log_error "sudo access required for SDDM installation"
         exit 1
     fi
-    
+
     sudo mkdir -p /etc/sddm.conf.d
-    
+
     # Copy SDDM conf files
     local found_conf=false
     for conf_file in "$SCRIPT_DIR/sddm"/*.conf; do
@@ -569,7 +778,7 @@ install_sddm_configs() {
         fi
     done
     [[ "$found_conf" == "false" ]] && log_warning "No SDDM conf files found"
-    
+
     # Copy Xsetup script
     if [[ -f "$SCRIPT_DIR/sddm/Xsetup" ]]; then
         sudo cp "$SCRIPT_DIR/sddm/Xsetup" /usr/share/sddm/scripts/Xsetup
@@ -577,7 +786,7 @@ install_sddm_configs() {
     else
         log_warning "No Xsetup script found"
     fi
-    
+
     log_success "SDDM configs installed"
 }
 
@@ -595,33 +804,51 @@ setup_vim() {
         log_info "Skipping Vim setup (not selected)"
         return
     fi
-    
+
     log_info "Setting up Vim with plugins..."
-    
+
+    if [[ "$DRY_RUN" == "true" ]]; then
+        if [[ ! -f "$HOME/.vim/autoload/plug.vim" ]]; then
+            echo -e "${YELLOW}[DRY-RUN]${NC} Would run: curl -fLo $HOME/.vim/autoload/plug.vim --create-dirs https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim"
+        fi
+        echo -e "${YELLOW}[DRY-RUN]${NC} Would run: cp $SCRIPT_DIR/vim/vimrc $HOME/.vimrc"
+        echo -e "${YELLOW}[DRY-RUN]${NC} Would run: vim +PlugInstall +qall"
+        return
+    fi
+
     # Install vim-plug if not already installed
     if [[ ! -f "$HOME/.vim/autoload/plug.vim" ]]; then
         log_info "Installing vim-plug..."
         curl -fLo "$HOME/.vim/autoload/plug.vim" --create-dirs \
             https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
     fi
-    
+
     # Copy vimrc
     cp "$SCRIPT_DIR/vim/vimrc" "$HOME/.vimrc"
-    
+
     # Install vim plugins
     log_info "Installing Vim plugins (this may take a moment)..."
     vim +PlugInstall +qall || log_warning "Vim plugins will install on first vim launch"
-    
+
     log_success "Vim setup complete"
 }
 
 setup_custom_ps1() {
     log_info "Setting up custom PS1 (bash prompt)..."
-    
+
+    if [[ "$DRY_RUN" == "true" ]]; then
+        echo -e "${YELLOW}[DRY-RUN]${NC} Would run: sudo cp $SCRIPT_DIR/ps1/custom_ps1.sh /etc/profile.d/custom_ps1.sh"
+        echo -e "${YELLOW}[DRY-RUN]${NC} Would run: sudo chmod +x /etc/profile.d/custom_ps1.sh"
+        if ! grep -q "custom_ps1.sh" "$HOME/.bashrc" 2>/dev/null; then
+            echo -e "${YELLOW}[DRY-RUN]${NC} Would add custom PS1 sourcing to .bashrc"
+        fi
+        return
+    fi
+
     # Copy custom PS1 to system profile.d
     sudo cp "$SCRIPT_DIR/ps1/custom_ps1.sh" /etc/profile.d/custom_ps1.sh
     sudo chmod +x /etc/profile.d/custom_ps1.sh
-    
+
     # Add sourcing to .bashrc if not already there
     if ! grep -q "custom_ps1.sh" "$HOME/.bashrc" 2>/dev/null; then
         {
@@ -639,6 +866,12 @@ setup_custom_ps1() {
 
 enable_services() {
     log_info "Enabling services..."
+
+    if [[ "$DRY_RUN" == "true" ]]; then
+        echo -e "${YELLOW}[DRY-RUN]${NC} Would run: sudo systemctl enable sddm.service"
+        return
+    fi
+
     sudo systemctl enable sddm.service
     log_success "Services enabled"
 }
@@ -727,9 +960,38 @@ show_summary() {
 
 main() {
     # Parse command line arguments
-    if [[ "${1:-}" == "-h" ]] || [[ "${1:-}" == "--help" ]]; then
-        show_help
-        exit 0
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -h|--help)
+                show_help
+                exit 0
+                ;;
+            -d|--dry-run)
+                DRY_RUN=true
+                shift
+                ;;
+            -b|--backup-dir)
+                if [[ -z "${2:-}" ]]; then
+                    log_error "Error: --backup-dir requires a directory path"
+                    exit 1
+                fi
+                BACKUP_DIR="$2"
+                shift 2
+                ;;
+            *)
+                log_error "Unknown option: $1"
+                echo "Use --help for usage information"
+                exit 1
+                ;;
+        esac
+    done
+
+    # Show dry-run banner if enabled
+    if [[ "$DRY_RUN" == "true" ]]; then
+        echo -e "${YELLOW}========================================${NC}"
+        echo -e "${YELLOW}DRY-RUN MODE - No changes will be made${NC}"
+        echo -e "${YELLOW}========================================${NC}"
+        echo ""
     fi
 
     # Set up error handling
@@ -740,6 +1002,7 @@ main() {
 
     # Run checks
     check_requirements
+    verify_source_structure
 
     # Display essential packages
     echo ""

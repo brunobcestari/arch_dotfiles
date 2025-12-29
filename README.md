@@ -2,6 +2,18 @@
 
 Personal dotfiles for Arch Linux with Hyprland window manager.
 
+**Now with modular architecture, dry-run mode, and easy maintenance!**
+
+## 📖 Table of Contents
+- [Features](#-features)
+- [Installation](#-installation)
+- [Installer Features](#-installer-features) - **NEW: Dry-run & custom backups**
+- [Maintenance Guide](#-maintenance-guide) - **How to add new dotfiles**
+- [Keybindings](#-keybindings)
+- [Customization](#-customization)
+- [Directory Structure](#-directory-structure)
+- [Troubleshooting](#-troubleshooting)
+
 ## 🎨 Features
 
 - **Window Manager**: Hyprland (Wayland compositor)
@@ -151,7 +163,9 @@ This makes it easy to keep your dotfiles repo in sync with your actual system co
 
 ## 🎯 Installer Features
 
+### Core Features
 - **Config-driven**: All packages defined in `packages.txt` and `optional-apps.conf`
+- **Modular architecture**: Centralized configuration arrays for easy maintenance
 - **Less interactive**: Simple yes/no prompts instead of complex selections
 - **Auto-install paru**: Automatically builds and installs paru if missing
 - **Clear display**: Shows what will be installed with repository sources
@@ -161,6 +175,54 @@ This makes it easy to keep your dotfiles repo in sync with your actual system co
 - **Error handling**: Robust error handling with `set -euo pipefail`
 - **Colored output**: Clear status messages for better readability
 - **Safe operations**: Confirmation prompts before destructive operations
+- **Structure verification**: Validates all required files/directories before installation
+
+### Command-Line Options
+
+```bash
+./install.sh [OPTIONS]
+```
+
+**Available Options:**
+- `-h, --help` - Show help message and exit
+- `-d, --dry-run` - Preview what would be installed without making any changes
+- `-b, --backup-dir DIR` - Specify custom backup directory (default: `~/.config-backup-YYYYMMDD-HHMMSS`)
+
+**Examples:**
+```bash
+# Normal installation
+./install.sh
+
+# Preview installation without making changes
+./install.sh --dry-run
+
+# Use custom backup directory
+./install.sh --backup-dir ~/my-backups
+
+# Combine options
+./install.sh --dry-run --backup-dir /tmp/test-backup
+```
+
+### Dry-Run Mode
+
+The `--dry-run` flag lets you preview exactly what the installer will do without making any changes:
+
+```bash
+./install.sh --dry-run
+```
+
+**What it shows:**
+- ✓ All packages that would be installed
+- ✓ All directories that would be created
+- ✓ All files that would be copied
+- ✓ All commands that would run (including sudo commands)
+- ✓ Backup locations and what would be backed up
+
+**Perfect for:**
+- Testing the installer before running it
+- Validating your dotfiles structure
+- Understanding what will happen on a fresh install
+- Debugging installation issues
 
 ## ⌨️ Keybindings
 
@@ -318,9 +380,10 @@ arch_dotfiles/
 ├── xdg-desktop-portal/    # Portal config for screen sharing
 ├── vim/                   # Vim configuration & plugins
 ├── ps1/                   # Custom bash prompt
+├── workstyle/             # Workstyle config (workspace icons)
 ├── packages.txt           # Essential packages (always installed)
 ├── optional-apps.conf     # Optional packages with categories & autostart
-├── install.sh             # Installation script
+├── install.sh             # Modular installation script with config arrays
 ├── sync-from-system.sh    # Sync system configs back to repo
 └── README.md              # This file
 ```
@@ -339,6 +402,120 @@ Screen sharing works with apps like Slack, Discord, Zoom, etc.
 
 **Environment Variables:**
 The Hyprland config includes `ELECTRON_OZONE_PLATFORM_HINT=wayland` for better Electron app support.
+
+## 🔧 Maintenance Guide
+
+### Adding New Dotfiles
+
+The installer uses **centralized configuration arrays** at the top of `install.sh` (lines 19-43). This makes adding new dotfiles super easy!
+
+#### 1. Add a Standard Config Directory (goes to `~/.config/`)
+
+Edit `install.sh` and add to the `CONFIG_DIRS` array:
+
+```bash
+readonly CONFIG_DIRS=(
+    "hypr"
+    "mako"
+    "neovim"        # <- Add your new config here!
+)
+```
+
+Then create the directory in your repo:
+```bash
+mkdir ~/gitrepos/arch_dotfiles/neovim
+# Add your config files...
+```
+
+**That's it!** The installer will automatically:
+- ✓ Verify the directory exists before installation
+- ✓ Create `~/.config/neovim` directory
+- ✓ Copy all files from `neovim/` to `~/.config/neovim/`
+- ✓ Include it in backups
+
+#### 2. Add a Home Directory File (goes to `~/`)
+
+Edit `install.sh` and add to the `HOME_FILES` array:
+
+```bash
+readonly HOME_FILES=(
+    "vim/vimrc:.vimrc"
+    "zsh/zshrc:.zshrc"    # <- Add your new file here!
+)
+```
+
+Format: `"source_path:destination_filename"`
+
+#### 3. Add a Conditional Config (only if package is selected)
+
+For configs that should only install when a specific package is selected:
+
+```bash
+readonly CONDITIONAL_CONFIGS=(
+    "workstyle-git:workstyle:workstyle"
+    "neovim:nvim:nvim"    # <- package_name:source_dir:dest_dir
+)
+```
+
+Format: `"package_name:source_directory:destination_directory"`
+
+The package must be listed in `optional-apps.conf` for this to work.
+
+#### 4. Use Different Source and Destination Names
+
+```bash
+readonly CONFIG_DIRS=(
+    "kitty-config:kitty"   # <- repo/kitty-config -> ~/.config/kitty
+)
+```
+
+### Adding New Packages
+
+#### Essential Packages (always installed)
+
+Edit `packages.txt` and add the package name:
+
+```
+## Terminal Emulators
+alacritty
+kitty           # <- Add here
+```
+
+#### Optional Packages (user can choose)
+
+Edit `optional-apps.conf`:
+
+```
+# Format: category|name|description|repo|autostart|startup_command
+development|neovim|Neovim text editor|official|no|
+personal|spotify|Spotify music player|aur|yes|spotify
+```
+
+**Fields explained:**
+- `category` - Group name (development, personal, etc.)
+- `name` - Package name (must match the actual package)
+- `description` - Human-readable description
+- `repo` - Either `official` or `aur`
+- `autostart` - `yes` to add to autostart, `no` otherwise
+- `startup_command` - Command to run on startup (empty if autostart=no)
+
+### Testing Your Changes
+
+Always test with dry-run first:
+
+```bash
+./install.sh --dry-run
+```
+
+This shows exactly what would be installed/copied without making any changes!
+
+### Best Practices
+
+1. **Keep it simple** - Don't add configs you don't use
+2. **Test with dry-run** - Always preview changes before installing
+3. **Document changes** - Update this README when adding major configs
+4. **Use sync script** - Keep repo in sync with `./sync-from-system.sh`
+5. **Commit regularly** - Small, focused commits are easier to track
 
 ## 🔧 Troubleshooting
 
@@ -375,4 +552,16 @@ The Hyprland config includes `ELECTRON_OZONE_PLATFORM_HINT=wayland` for better E
 ---
 
 **Author**: Bruno
-**Last Updated**: December 2024
+**Last Updated**: December 29, 2024
+
+## 📋 Recent Updates
+
+### December 2024
+- ✨ Added modular configuration arrays for easy maintenance
+- ✨ Added `--dry-run` mode to preview installation without making changes
+- ✨ Added `--backup-dir` option to customize backup location
+- ✨ Added source structure verification before installation
+- ✨ Added workstyle configuration for workspace icons
+- 🔧 Refactored installer to use centralized config arrays
+- 🔧 Improved backup system with dynamic config detection
+- 📚 Enhanced documentation with maintenance guide

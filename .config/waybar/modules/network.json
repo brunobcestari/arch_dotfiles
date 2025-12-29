@@ -1,9 +1,0 @@
-{
-  "network": {
-    "format-wifi": "\udb85\udebd {essid}",
-    "format-ethernet": "\udb80\ude00 {ipaddr}",
-    "format-disconnected": "⚠ Disconnected",
-    "tooltip-format": "{ifname}: {ipaddr}/{cidr}",
-    "on-click": "nm-connection-editor"
-  }
-}
