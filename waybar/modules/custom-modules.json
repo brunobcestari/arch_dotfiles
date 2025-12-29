@@ -24,5 +24,14 @@
     "interval": 3600,
     "on-click": "alacritty -e sh -c 'paru -Syu; read -p \"Press enter to close...\"'",
     "tooltip": true
+  },
+
+  "custom/openlinkhub": {
+    "format": "{}",
+    "return-type": "json",
+    "exec": "~/.config/waybar/scripts/openlinkhub-status.sh",
+    "restart-interval": 3,
+    "on-click": "/opt/openlinkhub-nativefier/DeviceDashboard",
+    "tooltip": true
   }
 }

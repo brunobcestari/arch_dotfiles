@@ -52,6 +52,7 @@
   "group/utilities": {
     "orientation": "inherit",
     "modules": [
+      "custom/openlinkhub",
       "custom/updates",
       "custom/vpn"
     ]
