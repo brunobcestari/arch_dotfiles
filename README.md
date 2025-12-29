@@ -71,7 +71,7 @@ cd ~/gitrepos/arch_dotfiles
 - **Development Tools**: Vim, Node.js, npm, git
 - **System Monitoring**: btop
 - **Hardware Control**: brightnessctl, playerctl
-- **Personal Applications**: ProtonMail Bridge, pCloud, Das Keyboard Q, Birdtray *(must be pre-installed)*
+- **Personal Applications**: ProtonMail Bridge, pCloud, Das Keyboard Q, Birdtray *(AUR, will autostart)*
 
 ### Configuration Files
 

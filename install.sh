@@ -241,7 +241,7 @@ prompt_category_selection() {
     for key in "${APP_ORDER[@]}"; do
         if [[ "${APP_CATEGORIES[$key]}" == "$category" ]]; then
             apps+=("$key")
-            ((count++))
+            count=$((count + 1))
         fi
     done
 
@@ -255,8 +255,8 @@ prompt_category_selection() {
 
     if [[ "$is_personal" == "yes" ]]; then
         echo ""
-        log_warning "These apps must be installed separately (proprietary/AUR)"
-        log_warning "Only enable autostart if already installed on your system"
+        log_warning "These are personal/productivity apps from AUR"
+        log_warning "They will be installed and added to autostart if confirmed"
     fi
 
     echo ""
@@ -352,13 +352,8 @@ install_packages() {
     for key in "${APP_ORDER[@]}"; do
         if [[ "${INSTALL_OPTIONAL[$key]:-}" == "yes" ]]; then
             local name="${APP_NAMES[$key]}"
-            local category="${APP_CATEGORIES[$key]}"
-
-            # Skip personal apps as they must be installed separately
-            if [[ "$category" != "personal" ]]; then
-                echo "$name" >> "$temp_packages"
-                ((optional_count++))
-            fi
+            echo "$name" >> "$temp_packages"
+            optional_count=$((optional_count + 1))
         fi
     done
 
@@ -376,15 +371,13 @@ install_packages() {
         for key in "${APP_ORDER[@]}"; do
             if [[ "${INSTALL_OPTIONAL[$key]:-}" == "yes" ]]; then
                 local name="${APP_NAMES[$key]}"
-                local category="${APP_CATEGORIES[$key]}"
                 local description="${APP_DESCRIPTIONS[$key]}"
+                local repo="${APP_REPOS[$key]}"
 
-                if [[ "$category" != "personal" ]]; then
-                    if [[ -n "$description" ]]; then
-                        echo "  ✓ $name - $description"
-                    else
-                        echo "  ✓ $name"
-                    fi
+                if [[ -n "$description" ]]; then
+                    echo "  ✓ $name - $description [$repo]"
+                else
+                    echo "  ✓ $name [$repo]"
                 fi
             fi
         done
