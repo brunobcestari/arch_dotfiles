@@ -30,8 +30,10 @@
 "music" = ""
 "disk usage" = "󰗮"
 ".pdf" = ""
-"Slack" = ""
+"slack" = ""
 "spotify" = ""
+"proton mail" = "󰇱"
+"thunderbird" = "󰇮"
 
 [other]
 fallback_icon = ""
