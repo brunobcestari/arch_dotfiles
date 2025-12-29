@@ -33,6 +33,7 @@ pavucontrol
 
 ## File Manager
 yazi
+baobab
 
 ## Python & GTK (for Waybar popups)
 python-gobject
@@ -40,8 +41,6 @@ gtk3
 gtk-layer-shell
 
 ## Utilities
-wev
-evtest
 curl
 
 ## Screenshot Tools
@@ -52,3 +51,6 @@ slurp
 ttf-font-awesome
 noto-fonts
 noto-fonts-emoji
+ttf-firacode-nerd
+ttf-jetbrains-mono-nerd
+ttf-nerd-fonts-symbols-mono
