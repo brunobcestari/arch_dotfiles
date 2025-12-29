@@ -219,7 +219,7 @@ footer_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
 footer_box.set_border_width(10)
 
 settings_btn = Gtk.Button(label="⚙️  Settings")
-settings_btn.connect("clicked", lambda *_: (subprocess.Popen(["pwvucontrol"]), Gtk.main_quit()))
+settings_btn.connect("clicked", lambda *_: (subprocess.Popen(["pavucontrol"]), Gtk.main_quit()))
 settings_btn.get_style_context().add_class("footer-button")
 
 footer_box.pack_end(settings_btn, False, False, 0)

@@ -23,6 +23,11 @@
 		<object class="GtkMenuItem" id="reboot">
 			<property name="label">Reboot</property>
 		</object>
-    </child>
+  </child>
+  <child>
+    <object class="GtkMenuItem" id="logout">
+      <property name="label">Logout</property>
+    </object>
+  </child>
   </object>
 </interface>
