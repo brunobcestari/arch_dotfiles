@@ -20,7 +20,6 @@
 
   // Layout: Left | Center | Right
   "modules-left": [
-    "hyprland/window"
   ],
 
   "modules-center": [

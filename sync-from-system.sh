@@ -162,6 +162,7 @@ main() {
     sync_config_dir "alacritty"
     sync_config_dir "rofi"
     sync_config_dir "xdg-desktop-portal"
+    sync_config_dir "workstyle"
 
     # Sync individual files
     sync_file "vimrc" "$HOME/.vimrc" "$SCRIPT_DIR/vim/vimrc"
