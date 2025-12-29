@@ -1,4 +1,5 @@
-# Hyprland Setup - Package Dependencies
+# Hyprland Setup - Essential Package Dependencies
+# These packages are required for the basic Hyprland setup to function
 # Install with: paru -S --needed - < packages.txt
 
 ## Core Hyprland
@@ -30,6 +31,9 @@ pipewire-alsa
 pipewire-jack
 pwvucontrol
 
+## File Manager
+yazi
+
 ## Python & GTK (for Waybar popups)
 python-gobject
 gtk3
@@ -40,23 +44,7 @@ wev
 evtest
 curl
 
-## File Manager
-thunar
-
 ## Fonts (for icons and UI)
 ttf-font-awesome
 noto-fonts
 noto-fonts-emoji
-
-## Vim & Development
-vim
-nodejs
-npm
-git
-
-## System Monitoring
-btop
-
-## Optional but recommended
-brightnessctl
-playerctl

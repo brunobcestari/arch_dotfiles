@@ -40,11 +40,9 @@ Personal dotfiles for Arch Linux with Hyprland window manager.
 ### Prerequisites
 
 - **Arch Linux** with base system installed
-- **paru** AUR helper (installer can auto-install if missing)
+- **paru** AUR helper (auto-installed if missing)
 
 ### Quick Install (Recommended)
-
-The installer script provides an **interactive experience** with **pacman-style group selection**:
 
 ```bash
 git clone <your-repo-url> ~/gitrepos/arch_dotfiles
@@ -53,43 +51,53 @@ cd ~/gitrepos/arch_dotfiles
 ```
 
 **The installer will:**
-1. Check system requirements (Arch Linux)
-2. **Auto-install paru** if not present (with your confirmation)
-3. Present package groups with numbered selection (like pacman groups):
+1. Check system requirements and **auto-install paru** if needed
+2. Display essential packages from `packages.txt`
+3. Ask simple yes/no questions for optional package categories:
    ```
-   File Manager
-   ================================================================
-       1) thunar - Thunar file manager
-   
-   Enter numbers separated by spaces (e.g., '1 3 4'), 'all' for all, or 'none' for none
-   Default: all [Enter to select all]:
+   File Manager:
+     ✓ thunar - Thunar file manager [official]
+
+   Install File Manager? [Y/n]:
    ```
-4. Show you all optional packages per category:
-   - **File Manager**: Thunar
-   - **Development Tools**: Vim, Node.js, npm, git
-   - **System Monitoring**: btop
-   - **Hardware Control**: brightnessctl, playerctl
-   - **Personal Applications**: ProtonMail Bridge, pCloud, Das Keyboard Q, Birdtray
-5. Automatically backup existing configurations
-6. Install only the packages you selected
-7. Generate custom `autostart.conf` with startup commands for selected personal apps
+4. Show installation summary before proceeding
+5. Backup existing configurations automatically
+6. Install selected packages
+7. Generate custom `autostart.conf` based on your selections
 8. Set up all configurations and enable services
 
-### Configuration File
+**Available optional categories:**
+- **File Manager**: Thunar
+- **Development Tools**: Vim, Node.js, npm, git
+- **System Monitoring**: btop
+- **Hardware Control**: brightnessctl, playerctl
+- **Personal Applications**: ProtonMail Bridge, pCloud, Das Keyboard Q, Birdtray *(must be pre-installed)*
 
-Optional packages are now defined in `optional-apps.conf`:
+### Configuration Files
 
+Package installation is controlled by two config files:
+
+**packages.txt** - Essential packages (always installed):
 ```
-# Format: category|name|description|startup_command|autostart
-filemanager|thunar|Thunar file manager||no
-development|vim|Vim text editor with plugins||no
-personal|protonmail-bridge|ProtonMail Bridge|protonmail-bridge|yes
+hyprland
+waybar
+alacritty
+# ... etc
+```
+
+**optional-apps.conf** - Optional packages grouped by category:
+```
+# Format: category|name|description|repo|autostart|startup_command
+filemanager|thunar|Thunar file manager|official|no|
+development|vim|Vim text editor with plugins|official|no|
+personal|protonmail-bridge|ProtonMail Bridge|aur|yes|protonmail-bridge
 ```
 
 This makes it easy to:
-- Add new optional packages
-- Define startup commands in one place
+- Add/remove packages by editing config files
+- Specify package source (official repos or AUR)
 - Control which apps autostart on login
+- Maintain consistent setup across installations
 
 ### Manual Install
 
@@ -125,20 +133,16 @@ If you prefer manual control, you can install components individually:
 
 ## 🎯 Installer Features
 
-The `install.sh` script includes several modern bash best practices:
-
-- **Auto-install paru**: Automatically builds and installs paru if not present
-- **Config-file-based**: Optional packages defined in `optional-apps.conf` with startup commands
-- **Pacman-style Selection**: Group-based selection with numbered lists (like pacman package groups)
-- **Interactive Package Selection**: Choose exactly what you need with 'all', 'none', or specific numbers
-- **Automatic Backups**: Creates timestamped backups before overwriting configs
-- **Error Handling**: Uses `set -euo pipefail` and trap for robust error handling
-- **Colored Logging**: Clear status messages with color-coded output
-- **Shellcheck Compliant**: Passes shellcheck with no errors or warnings
-- **Modular Functions**: Well-organized code with single-responsibility functions
-- **Dynamic Configuration**: Generates `autostart.conf` based on your selections with startup commands from config
-- **Safe Operations**: Confirmation prompts for destructive operations
-- **Brand New Install Ready**: Perfect for fresh Arch Linux installations
+- **Config-driven**: All packages defined in `packages.txt` and `optional-apps.conf`
+- **Less interactive**: Simple yes/no prompts instead of complex selections
+- **Auto-install paru**: Automatically builds and installs paru if missing
+- **Clear display**: Shows what will be installed with repository sources
+- **Installation summary**: Review package counts before proceeding
+- **Automatic backups**: Creates timestamped backups before overwriting configs
+- **Dynamic autostart**: Generates `autostart.conf` based on your selections
+- **Error handling**: Robust error handling with `set -euo pipefail`
+- **Colored output**: Clear status messages for better readability
+- **Safe operations**: Confirmation prompts before destructive operations
 
 ## ⌨️ Keybindings
 
@@ -296,7 +300,8 @@ arch_dotfiles/
 ├── xdg-desktop-portal/    # Portal config for screen sharing
 ├── vim/                   # Vim configuration & plugins
 ├── ps1/                   # Custom bash prompt
-├── packages.txt           # Package dependencies
+├── packages.txt           # Essential packages (always installed)
+├── optional-apps.conf     # Optional packages with categories & autostart
 ├── install.sh             # Installation script
 └── README.md              # This file
 ```

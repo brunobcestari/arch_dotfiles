@@ -16,6 +16,6 @@
     "format": "󰋊 {percentage_used}%",
     "path": "/",
     "tooltip-format": "Used: {used} / {total}",
-    "on-click": "thunar /"
+    "on-click": "yazi /"
   }
 }

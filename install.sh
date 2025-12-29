@@ -40,30 +40,31 @@ USAGE:
 
 OPTIONS:
     -h, --help      Show this help message and exit
-    
+
 DESCRIPTION:
-    Interactive installer for Hyprland dotfiles on Arch Linux.
-    
+    Installer for Hyprland dotfiles on Arch Linux.
+
     The installer will:
     - Check system requirements (Arch Linux, paru)
-    - Interactively prompt for optional package selection
+    - Display essential packages from packages.txt
+    - Prompt for optional package categories from optional-apps.conf
+    - Show installation summary before proceeding
     - Backup existing configurations
     - Install selected packages
     - Copy configuration files
     - Generate custom autostart.conf based on selections
     - Set up services and system integration
-    
+
+CONFIGURATION FILES:
+    packages.txt         - Essential packages installed by default
+    optional-apps.conf   - Optional packages grouped by category
+
 REQUIREMENTS:
     - Arch Linux
-    - paru (AUR helper)
-    
-    To install paru:
-        sudo pacman -S --needed base-devel git
-        git clone https://aur.archlinux.org/paru.git
-        cd paru && makepkg -si
+    - paru (AUR helper) - will be auto-installed if missing
 
 EXAMPLES:
-    ./install.sh            Run the interactive installer
+    ./install.sh            Run the installer
     ./install.sh --help     Show this help message
 
 EOF
@@ -179,33 +180,52 @@ check_requirements() {
 declare -A APP_CATEGORIES
 declare -A APP_NAMES
 declare -A APP_DESCRIPTIONS
-declare -A APP_STARTUP_CMDS
+declare -A APP_REPOS
 declare -A APP_AUTOSTART
+declare -A APP_STARTUP_CMDS
 declare -a APP_ORDER
 
 load_optional_apps() {
     local config_file="$SCRIPT_DIR/optional-apps.conf"
-    
+
     if [[ ! -f "$config_file" ]]; then
         log_error "Configuration file not found: $config_file"
         exit 1
     fi
-    
-    local idx=0
-    while IFS='|' read -r category name description startup_cmd autostart; do
+
+    while IFS='|' read -r category name description repo autostart startup_cmd; do
         # Skip comments and empty lines
         [[ "$category" =~ ^#.*$ ]] && continue
         [[ -z "$category" ]] && continue
-        
+
         local key="${category}_${name}"
         APP_CATEGORIES[$key]="$category"
         APP_NAMES[$key]="$name"
         APP_DESCRIPTIONS[$key]="$description"
-        APP_STARTUP_CMDS[$key]="$startup_cmd"
+        APP_REPOS[$key]="$repo"
         APP_AUTOSTART[$key]="$autostart"
-        APP_ORDER[idx]="$key"
-        ((idx++))
+        APP_STARTUP_CMDS[$key]="$startup_cmd"
+        APP_ORDER+=("$key")
     done < "$config_file"
+}
+
+display_category_packages() {
+    local category="$1"
+    local indent="  "
+
+    for key in "${APP_ORDER[@]}"; do
+        if [[ "${APP_CATEGORIES[$key]}" == "$category" ]]; then
+            local name="${APP_NAMES[$key]}"
+            local description="${APP_DESCRIPTIONS[$key]}"
+            local repo="${APP_REPOS[$key]}"
+
+            if [[ -n "$description" ]]; then
+                echo "${indent}✓ $name - $description [$repo]"
+            else
+                echo "${indent}✓ $name [$repo]"
+            fi
+        fi
+    done
 }
 
 prompt_category_selection() {
@@ -213,167 +233,173 @@ prompt_category_selection() {
     local category_display="$2"
     local default_install="$3"
     local is_personal="${4:-no}"
-    
+
     # Get all apps in this category
     local apps=()
-    local app_list=""
     local count=0
-    
+
     for key in "${APP_ORDER[@]}"; do
         if [[ "${APP_CATEGORIES[$key]}" == "$category" ]]; then
             apps+=("$key")
             ((count++))
-            app_list+="    $count) ${APP_NAMES[$key]}"
-            if [[ -n "${APP_DESCRIPTIONS[$key]}" ]]; then
-                app_list+=" - ${APP_DESCRIPTIONS[$key]}"
-            fi
-            app_list+=$'\n'
         fi
     done
-    
+
     if [[ $count -eq 0 ]]; then
         return
     fi
-    
+
     echo ""
-    log_info "$category_display"
-    echo "================================================================"
-    
+    echo -e "${BLUE}$category_display:${NC}"
+    display_category_packages "$category"
+
     if [[ "$is_personal" == "yes" ]]; then
-        log_warning "These apps must be installed separately (proprietary/AUR)."
-        log_warning "Only select if already installed on your system."
         echo ""
+        log_warning "These apps must be installed separately (proprietary/AUR)"
+        log_warning "Only enable autostart if already installed on your system"
     fi
-    
-    echo -e "$app_list"
-    
-    # Ask for selection
-    echo "Enter numbers separated by spaces (e.g., '1 3 4'), 'all' for all, or 'none' for none"
-    if [[ "$default_install" == "all" ]]; then
-        echo -n "Default: all [Enter to select all]: "
-    else
-        echo -n "Selection: "
-    fi
-    
-    read -r selection
-    
-    # Handle empty input (default)
-    if [[ -z "$selection" ]] && [[ "$default_install" == "all" ]]; then
-        selection="all"
-    fi
-    
-    # Process selection
-    if [[ "$selection" == "all" ]]; then
+
+    echo ""
+    local default_answer="y"
+    [[ "$default_install" != "all" ]] && default_answer="n"
+
+    if prompt_yes_no "Install $category_display?" "$default_answer"; then
         for key in "${apps[@]}"; do
             INSTALL_OPTIONAL[$key]="yes"
-        done
-    elif [[ "$selection" != "none" ]]; then
-        # Parse number selection
-        for num in $selection; do
-            if [[ "$num" =~ ^[0-9]+$ ]] && [[ $num -ge 1 ]] && [[ $num -le $count ]]; then
-                local idx=$((num - 1))
-                INSTALL_OPTIONAL[${apps[$idx]}]="yes"
-            fi
         done
     fi
 }
 
+display_essential_packages() {
+    local packages_file="$SCRIPT_DIR/packages.txt"
+
+    if [[ ! -f "$packages_file" ]]; then
+        log_error "Packages file not found: $packages_file"
+        exit 1
+    fi
+
+    log_info "Essential Packages (will be installed automatically):"
+    echo ""
+
+    # Read and display packages with categories
+    local current_category=""
+    while IFS= read -r line; do
+        # Skip empty lines
+        [[ -z "$line" ]] && continue
+
+        # Check if it's a category header
+        if [[ "$line" =~ ^##[[:space:]](.+)$ ]]; then
+            current_category="${BASH_REMATCH[1]}"
+            echo -e "${BLUE}${current_category}:${NC}"
+        # Skip general comments
+        elif [[ "$line" =~ ^# ]]; then
+            continue
+        # It's a package name
+        else
+            echo "  ✓ $line"
+        fi
+    done < "$packages_file"
+}
+
 prompt_optional_packages() {
     load_optional_apps
-    
+
     echo ""
     log_info "Optional Package Selection"
     echo "================================================================"
     echo "Select which optional packages you want to install."
     echo ""
-    
+
     # File Manager
     prompt_category_selection "filemanager" "File Manager" "all" "no"
-    
+
     # Development Tools
     prompt_category_selection "development" "Development Tools" "all" "no"
-    
+
     # System Monitoring
     prompt_category_selection "monitoring" "System Monitoring" "all" "no"
-    
+
     # Hardware Control
     prompt_category_selection "hardware" "Hardware Control" "all" "no"
-    
+
     # Personal Applications
     prompt_category_selection "personal" "Personal Applications (Startup Apps)" "none" "yes"
-    
+
     echo ""
     log_info "Selection complete!"
 }
 
 install_packages() {
-    log_info "Installing packages..."
-    
     # Create temporary package list
     local temp_packages="/tmp/install-packages-$$.txt"
-    
-    # Core packages (always install)
-    cat > "$temp_packages" << 'EOF'
-# Core Hyprland
-hyprland
-hyprlock
-xdg-desktop-portal-hyprland
 
-# Display Manager
-sddm
+    # Read core packages from packages.txt
+    local packages_file="$SCRIPT_DIR/packages.txt"
+    if [[ ! -f "$packages_file" ]]; then
+        log_error "Packages file not found: $packages_file"
+        exit 1
+    fi
 
-# Status Bar & Widgets
-waybar
-wttrbar
+    # Copy essential packages (skip comments and empty lines)
+    grep -v '^#' "$packages_file" | grep -v '^$' > "$temp_packages"
 
-# Notifications
-mako
+    # Count essential packages
+    local essential_count
+    essential_count=$(wc -l < "$temp_packages")
 
-# Terminal
-alacritty
-
-# Application Launcher
-rofi
-
-# Audio (PipeWire)
-pipewire
-wireplumber
-pipewire-pulse
-pipewire-alsa
-pipewire-jack
-pwvucontrol
-
-# Python & GTK (for Waybar popups)
-python-gobject
-gtk3
-gtk-layer-shell
-
-# Utilities
-wev
-evtest
-curl
-
-# Fonts (for icons and UI)
-ttf-font-awesome
-noto-fonts
-noto-fonts-emoji
-EOF
-    
     # Add optional packages based on user selection
+    local optional_count=0
     for key in "${APP_ORDER[@]}"; do
         if [[ "${INSTALL_OPTIONAL[$key]:-}" == "yes" ]]; then
             local name="${APP_NAMES[$key]}"
             local category="${APP_CATEGORIES[$key]}"
-            
+
             # Skip personal apps as they must be installed separately
             if [[ "$category" != "personal" ]]; then
                 echo "$name" >> "$temp_packages"
+                ((optional_count++))
             fi
         fi
     done
-    
+
+    # Display installation summary
+    echo ""
+    log_info "Installation Summary"
+    echo "================================================================"
+    echo "Essential packages: $essential_count"
+    echo "Optional packages:  $optional_count"
+    echo "Total packages:     $((essential_count + optional_count))"
+    echo ""
+
+    if [[ $optional_count -gt 0 ]]; then
+        echo "Optional packages to install:"
+        for key in "${APP_ORDER[@]}"; do
+            if [[ "${INSTALL_OPTIONAL[$key]:-}" == "yes" ]]; then
+                local name="${APP_NAMES[$key]}"
+                local category="${APP_CATEGORIES[$key]}"
+                local description="${APP_DESCRIPTIONS[$key]}"
+
+                if [[ "$category" != "personal" ]]; then
+                    if [[ -n "$description" ]]; then
+                        echo "  ✓ $name - $description"
+                    else
+                        echo "  ✓ $name"
+                    fi
+                fi
+            fi
+        done
+        echo ""
+    fi
+
+    if ! prompt_yes_no "Proceed with package installation?" "y"; then
+        log_info "Installation cancelled by user"
+        rm -f "$temp_packages"
+        exit 0
+    fi
+
     # Install packages
-    log_info "Installing selected packages with paru..."
+    echo ""
+    log_info "Installing packages with paru..."
     if paru -S --needed - < "$temp_packages"; then
         log_success "Packages installed successfully"
     else
@@ -381,7 +407,7 @@ EOF
         rm -f "$temp_packages"
         exit 1
     fi
-    
+
     rm -f "$temp_packages"
 }
 
@@ -709,23 +735,27 @@ main() {
         show_help
         exit 0
     fi
-    
+
     # Set up error handling
     trap cleanup EXIT
-    
+
     echo "=== Hyprland Dotfiles Installer ==="
     echo ""
-    
+
     # Run checks
     check_requirements
-    
+
+    # Display essential packages
+    echo ""
+    display_essential_packages
+
     # Prompt for optional packages
     prompt_optional_packages
-    
+
     echo ""
     log_info "Starting installation..."
     echo ""
-    
+
     # Installation steps
     backup_existing_configs
     install_packages
@@ -736,7 +766,7 @@ main() {
     setup_vim
     setup_custom_ps1
     enable_services
-    
+
     # Show summary
     show_summary
 }
