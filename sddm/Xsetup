@@ -21,7 +21,7 @@ xrandr --query
 
 # Configure displays: only use DP-1 (4K HiDPI), turn off DP-2
 echo "Configuring displays..."
-xrandr --output DP-1 --mode 3840x2160 --rate 60 --scale 1x1 --primary
+xrandr --output DP-1 --mode 3840x2160 --rate 60 --scale 0.5x0.5 --primary
 xrandr --output DP-2 --off
 
 # Set DPI for HiDPI display (96 DPI * 2 = 192 for 2x scaling)

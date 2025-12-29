@@ -322,6 +322,9 @@ prompt_optional_packages() {
     # Hardware Control
     prompt_category_selection "hardware" "Hardware Control" "all" "no"
 
+    # System Customization
+    prompt_category_selection "customization" "System Customization" "all" "no"
+
     # Personal Applications
     prompt_category_selection "personal" "Personal Applications (Startup Apps)" "none" "yes"
 

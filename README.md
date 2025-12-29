@@ -70,8 +70,9 @@ cd ~/gitrepos/arch_dotfiles
 - **File Manager**: Thunar
 - **Development Tools**: Vim, Node.js, npm, git
 - **System Monitoring**: btop
-- **Hardware Control**: brightnessctl, playerctl
-- **Personal Applications**: ProtonMail Bridge, pCloud, Das Keyboard Q, Birdtray *(AUR, will autostart)*
+- **Hardware Control**: brightnessctl, playerctl, OpenLinkHub (Corsair), razercfg (Razer)
+- **System Customization**: SDDM Silent Theme
+- **Personal Applications**: ProtonMail Bridge, Proton Mail, Proton Pass, pCloud Drive, Das Keyboard Q, Birdtray *(AUR, will autostart)*
 
 ### Configuration Files
 
@@ -130,6 +131,23 @@ If you prefer manual control, you can install components individually:
    ```
 
 5. **Reboot** and select Hyprland from SDDM
+
+### Syncing Changes Back to Repo
+
+After making changes to your configs, use the sync script to backup to the repo:
+
+```bash
+./sync-from-system.sh
+```
+
+**The sync script will:**
+1. Copy all configs from `~/.config` back to the repo
+2. Copy `.vimrc` and `custom_ps1.sh` back to the repo
+3. Optionally sync SDDM configs (requires sudo)
+4. Show git diff of changes
+5. Optionally commit and push changes
+
+This makes it easy to keep your dotfiles repo in sync with your actual system configs!
 
 ## 🎯 Installer Features
 
@@ -303,6 +321,7 @@ arch_dotfiles/
 ├── packages.txt           # Essential packages (always installed)
 ├── optional-apps.conf     # Optional packages with categories & autostart
 ├── install.sh             # Installation script
+├── sync-from-system.sh    # Sync system configs back to repo
 └── README.md              # This file
 ```
 

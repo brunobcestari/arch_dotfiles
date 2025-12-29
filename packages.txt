@@ -29,7 +29,7 @@ wireplumber
 pipewire-pulse
 pipewire-alsa
 pipewire-jack
-pwvucontrol
+pavucontrol
 
 ## File Manager
 yazi
@@ -43,6 +43,10 @@ gtk-layer-shell
 wev
 evtest
 curl
+
+## Screenshot Tools
+grim
+slurp
 
 ## Fonts (for icons and UI)
 ttf-font-awesome
