@@ -493,7 +493,7 @@ install_packages() {
         echo -e "${YELLOW}[DRY-RUN]${NC} Would install packages:"
         cat "$temp_packages" | sed 's/^/  - /'
     else
-        if paru -S --needed - < "$temp_packages"; then
+        if paru -S --noconfirm --needed - < "$temp_packages"; then
             log_success "Packages installed successfully"
         else
             log_error "Package installation failed"
@@ -700,6 +700,15 @@ generate_autostart_config() {
 # Autostart necessary processes (like notifications daemons, status bars, etc.)
 # See https://wiki.hypr.land/Configuring/Keywords/
 
+# Add essential autostart entries
+# Start Waybar (top and bottom bars)
+exec-once = waybar -c ~/.config/waybar/config-top.jsonc
+exec-once = waybar -c ~/.config/waybar/config-bottom.jsonc
+exec-once = waybar -c ~/.config/waybar/config-bottom-secondary.jsonc
+
+# Start Mako (notifications)
+exec-once = mako
+
 EOF
     
     # Add applications based on user selection
@@ -732,15 +741,6 @@ EOF
         echo "" >> "$autostart_file"
     fi
     
-    # Add essential autostart entries
-    cat >> "$autostart_file" << 'EOF'
-# Start Waybar (top and bottom bars)
-exec-once = waybar -c ~/.config/waybar/config-top.jsonc
-exec-once = waybar -c ~/.config/waybar/config-bottom.jsonc
-
-# Start Mako (notifications)
-exec-once = mako
-EOF
     
     log_success "Autostart configuration generated"
 }
