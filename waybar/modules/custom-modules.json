@@ -12,7 +12,7 @@
     "format": "{}",
     "return-type": "json",
     "exec": "~/.config/waybar/scripts/vpn-status.sh",
-    "restart-interval": 3,
+    "restart-interval": 5,
     "on-click": "protonvpn-app",
     "tooltip": true
   },

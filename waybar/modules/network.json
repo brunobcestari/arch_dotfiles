@@ -3,7 +3,7 @@
     "format-wifi": "\udb85\udebd {essid}",
     "format-ethernet": "\udb80\ude00 {ipaddr}",
     "format-disconnected": "⚠ Disconnected",
-    "tooltip-format": "{ifname}: {ipaddr}/{cidr}",
+    "tooltip-format": "{ifname}: {ipaddr}/{cidr}\nGateway: {gwaddr}",
     "on-click": "nm-connection-editor"
   }
 }
