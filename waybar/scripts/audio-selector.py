@@ -97,9 +97,9 @@ win.set_default_size(400, -1)
 if HAS_LAYER_SHELL:
     GtkLayerShell.init_for_window(win)
     GtkLayerShell.set_layer(win, GtkLayerShell.Layer.OVERLAY)
-    GtkLayerShell.set_anchor(win, GtkLayerShell.Edge.TOP, True)
+    GtkLayerShell.set_anchor(win, GtkLayerShell.Edge.BOTTOM, True)
     GtkLayerShell.set_anchor(win, GtkLayerShell.Edge.RIGHT, True)
-    GtkLayerShell.set_margin(win, GtkLayerShell.Edge.TOP, 35)
+    GtkLayerShell.set_margin(win, GtkLayerShell.Edge.BOTTOM, 35)
     GtkLayerShell.set_margin(win, GtkLayerShell.Edge.RIGHT, 10)
     GtkLayerShell.set_keyboard_mode(win, GtkLayerShell.KeyboardMode.ON_DEMAND)
 
@@ -158,8 +158,7 @@ def set_device(device_id):
                 # Remove bold if it was there
                 name_label.set_text(name_label.get_text())
 
-        # Close after a brief moment so user can see the change
-        GLib.timeout_add(800, Gtk.main_quit)
+        # Window will close based on hover behavior (stays open while mouse is inside)
     except Exception as e:
         print(f"Error setting device: {e}")
 
@@ -298,5 +297,52 @@ win.connect("key-press-event", lambda w, e: Gtk.main_quit() if e.keyval == Gdk.K
 
 # Auto-close after 30 seconds of inactivity
 GLib.timeout_add_seconds(30, Gtk.main_quit)
+
+# Smart click-away-to-close with hover delay
+mouse_entered = False
+close_timeout_id = None
+
+def schedule_close():
+    """Actually close the window if mouse is still outside"""
+    global mouse_entered
+    if not mouse_entered:
+        Gtk.main_quit()
+    return False  # Don't repeat the timeout
+
+def on_enter_notify(widget, event):
+    global mouse_entered, close_timeout_id
+    # Only track actual window entry, not child widget crossings
+    if event.detail != Gdk.NotifyType.INFERIOR:
+        mouse_entered = True
+        # Cancel any pending close timeout
+        if close_timeout_id is not None:
+            GLib.source_remove(close_timeout_id)
+            close_timeout_id = None
+    return False
+
+def on_leave_notify(widget, event):
+    global mouse_entered, close_timeout_id
+    # Only track actual window exit, not child widget crossings
+    if event.detail != Gdk.NotifyType.INFERIOR:
+        mouse_entered = False
+        # Schedule close after 1 second of mouse being outside
+        if close_timeout_id is not None:
+            GLib.source_remove(close_timeout_id)
+        close_timeout_id = GLib.timeout_add(1000, schedule_close)
+    return False
+
+def on_focus_out(widget, event):
+    global mouse_entered, close_timeout_id
+    # If focus is lost and mouse never entered, close after short delay
+    # This handles clicking outside the window
+    if not mouse_entered:
+        if close_timeout_id is not None:
+            GLib.source_remove(close_timeout_id)
+        close_timeout_id = GLib.timeout_add(200, schedule_close)
+    return False
+
+win.connect("enter-notify-event", on_enter_notify)
+win.connect("leave-notify-event", on_leave_notify)
+win.connect("focus-out-event", on_focus_out)
 
 Gtk.main()
