@@ -21,6 +21,9 @@
 
   // Layout: Left | Center | Right
   "modules-left": [
+    "temperature#cpu",
+    "temperature#gpu",
+    "group/system"
   ],
 
   "modules-center": [
@@ -29,9 +32,6 @@
   ],
 
   "modules-right": [
-    "temperature#cpu",
-    "temperature#gpu",
-    "group/system",
     "group/utilities",
     "network"
   ],
@@ -53,6 +53,7 @@
     "orientation": "inherit",
     "modules": [
       "custom/openlinkhub",
+      "custom/waydroid",
       "custom/updates",
       "custom/vpn"
     ]

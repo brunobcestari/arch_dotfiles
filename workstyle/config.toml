@@ -34,6 +34,9 @@
 "spotify" = ""
 "proton mail" = "󰇱"
 "thunderbird" = "󰇮"
+"psensor" = ""
+"pavucontrol" = "󱡫"
+"waydroid" = ""
 
 [other]
 fallback_icon = ""

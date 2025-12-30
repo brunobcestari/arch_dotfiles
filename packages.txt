@@ -42,6 +42,7 @@ gtk-layer-shell
 
 ## Utilities
 curl
+psensor
 
 ## Screenshot Tools
 grim

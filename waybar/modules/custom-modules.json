@@ -33,5 +33,15 @@
     "restart-interval": 3,
     "on-click": "/opt/openlinkhub-nativefier/DeviceDashboard",
     "tooltip": true
+  },
+
+  "custom/waydroid": {
+    "format": "{}",
+    "return-type": "json",
+    "exec": "~/.config/waybar/scripts/waydroid-status.sh",
+    "restart-interval": 5,
+    "on-click": "~/.config/waybar/scripts/waydroid-menu.py",
+    "on-click-right": "~/.config/waybar/scripts/waydroid-apps.py",
+    "tooltip": true
   }
 }

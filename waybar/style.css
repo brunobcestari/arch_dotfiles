@@ -52,7 +52,8 @@ window#waybar {
 #custom-vpn,
 #custom-updates,
 #custom-mail,
-#custom-openlinkhub {
+#custom-openlinkhub,
+#custom-waydroid {
     padding: 0 10px;
     margin: 0 2px;
     background: rgba(255, 255, 255, 0.05);
@@ -231,6 +232,20 @@ window#waybar {
 
 #custom-openlinkhub.stopped {
     color: #ff9999;
+}
+
+/* Waydroid Status */
+#custom-waydroid {
+    color: #99ff99;
+}
+
+#custom-waydroid.running {
+    color: #66ff99;
+    background: rgba(102, 255, 153, 0.1);
+}
+
+#custom-waydroid.stopped {
+    color: #ffaa66;
 }
 
 /* Email */
