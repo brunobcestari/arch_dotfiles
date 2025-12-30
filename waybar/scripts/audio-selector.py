@@ -142,6 +142,13 @@ def set_device(device_id):
         import time
         time.sleep(0.1)
 
+        # Find device name from our devices list
+        selected_device_name = None
+        for device in devices:
+            if device['id'] == device_id:
+                selected_device_name = device['name']
+                break
+
         # Update UI to show the new selection
         for row in list_box.get_children():
             box = row.get_child()
@@ -151,16 +158,48 @@ def set_device(device_id):
             if row in device_map and device_map[row] == device_id:
                 # This is the newly selected device
                 check_label.set_text("✓")
-                name_label.set_markup(f"<b>{name_label.get_text()}</b>")
+                name_label.set_markup(f"<b>{devices[[d['id'] for d in devices].index(device_id)]['name']}</b>")
             else:
                 # Other devices
                 check_label.set_text(" ")
-                # Remove bold if it was there
-                name_label.set_text(name_label.get_text())
+                # Get device name for this row and reset without bold
+                row_device_id = device_map.get(row)
+                if row_device_id:
+                    for d in devices:
+                        if d['id'] == row_device_id:
+                            name_label.set_text(d['name'])
+                            break
+
+        # Send notification for device switch
+        if selected_device_name:
+            notify_icon = "audio-input-microphone" if is_input else "audio-speakers"
+            notify_type = "Input" if is_input else "Output"
+            replace_id = "9010" if is_input else "9011"
+            subprocess.run([
+                'notify-send',
+                '-u', 'low',
+                '-a', 'Audio',
+                '-c', 'device',
+                '-i', notify_icon,
+                '-t', '2000',
+                '-r', replace_id,
+                f'{notify_type}: {selected_device_name}'
+            ])
 
         # Window will close based on hover behavior (stays open while mouse is inside)
     except Exception as e:
         print(f"Error setting device: {e}")
+        subprocess.run([
+            'notify-send',
+            '-u', 'critical',
+            '-a', 'Audio',
+            '-c', 'device.error',
+            '-i', 'dialog-error',
+            '-t', '3000',
+            '-r', '9012',
+            'Audio Error',
+            str(e)
+        ])
 
 # Store device mapping for row activation
 device_map = {}

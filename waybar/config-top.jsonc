@@ -33,7 +33,8 @@
 
   "modules-right": [
     "group/utilities",
-    "network"
+    "network",
+    "custom/mako"
   ],
 
   // ============================================

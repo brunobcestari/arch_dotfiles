@@ -53,7 +53,8 @@ window#waybar {
 #custom-updates,
 #custom-mail,
 #custom-openlinkhub,
-#custom-waydroid {
+#custom-waydroid,
+#custom-mako {
     padding: 0 10px;
     margin: 0 2px;
     background: rgba(255, 255, 255, 0.05);
@@ -297,4 +298,22 @@ window#waybar {
 
 #temperature.critical {
   background-color: #E42022;
- }
+}
+
+/* Mako Notifications */
+#custom-mako {
+    color: #99ccff;
+}
+
+#custom-mako.no-notifications {
+    color: #888888;
+}
+
+#custom-mako.has-notifications {
+    color: #66ff99;
+}
+
+#custom-mako.dnd {
+    color: #ff9999;
+    background: rgba(255, 153, 153, 0.1);
+}

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import gi
 import subprocess
-import sys
+import json
 
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk, GLib
@@ -13,64 +13,37 @@ try:
 except (ValueError, ImportError):
     HAS_LAYER_SHELL = False
 
-# Check Waydroid session status
-def get_waydroid_status():
+# Check if DND is active
+def is_dnd_active():
     try:
-        result = subprocess.run(['waydroid', 'status'], capture_output=True, text=True)
-        for line in result.stdout.split('\n'):
-            if 'Session:' in line:
-                return 'RUNNING' in line
-        return False
+        result = subprocess.run(['makoctl', 'mode'], capture_output=True, text=True)
+        return 'do-not-disturb' in result.stdout
     except:
         return False
 
-# Waydroid actions
-ACTIONS = [
-    {
-        'id': 'start',
-        'label': 'Start Session',
-        'icon': '',
-        'key': 's',
-        'command': 'waydroid session start',
-        'description': 'Start Waydroid container'
-    },
-    {
-        'id': 'stop',
-        'label': 'Stop Session',
-        'icon': '',
-        'key': 'x',
-        'command': 'waydroid session stop',
-        'description': 'Stop Waydroid container'
-    },
-    {
-        'id': 'show',
-        'label': 'Show UI',
-        'icon': '',
-        'key': 'u',
-        'command': 'waydroid show-full-ui',
-        'description': 'Show Waydroid window'
-    },
-    {
-        'id': 'launch-apps',
-        'label': 'Launch Apps',
-        'icon': '',
-        'key': 'a',
-        'command': '~/.config/waybar/scripts/waydroid-apps.py',
-        'description': 'Quick launch Android apps'
-    }
-]
+# Get notification history
+def get_notification_history():
+    try:
+        result = subprocess.run(['makoctl', 'history'], capture_output=True, text=True)
+        data = json.loads(result.stdout)
+        notifications = data.get('data', [[]])[0]
+        return notifications
+    except:
+        return []
 
 # Global state
 mouse_entered = False
 close_timeout_id = None
+dnd_active = is_dnd_active()
+notifications = get_notification_history()
 
 # Create main window
 win = Gtk.Window()
-win.set_title("Waydroid Control")
+win.set_title("Notifications")
 win.set_decorated(False)
 win.set_resizable(False)
 win.set_type_hint(Gdk.WindowTypeHint.DIALOG)
-win.set_default_size(320, -1)
+win.set_default_size(350, -1)
 
 # Setup layer shell if available
 if HAS_LAYER_SHELL:
@@ -86,43 +59,80 @@ if HAS_LAYER_SHELL:
 main_container = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
 main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
 
-def execute_action(action):
-    """Execute a Waydroid action"""
+def execute_action(action_id):
+    """Execute a mako action"""
     try:
-        if action['id'] == 'start':
-            # Start in background
-            subprocess.Popen(action['command'], shell=True)
-            subprocess.run(['notify-send', '-u', 'normal', '-a', 'Waydroid', '-c', 'device', 'Android container starting...', '-i', 'waydroid', '-t', '3000', '-r', '9001'])
-        elif action['id'] == 'stop':
-            subprocess.run(action['command'], shell=True, check=True)
-            subprocess.run(['notify-send', '-u', 'normal', '-a', 'Waydroid', '-c', 'device', 'Container stopped successfully', '-i', 'waydroid', '-t', '3000', '-r', '9001'])
-        elif action['id'] == 'show':
-            # Ensure session is running first
-            if not get_waydroid_status():
-                subprocess.run(['notify-send', '-u', 'normal', '-a', 'Waydroid', '-c', 'device', 'Starting container...', '-i', 'waydroid', '-t', '3000', '-r', '9001'])
-                subprocess.Popen('waydroid session start', shell=True)
-                GLib.timeout_add(2000, lambda: subprocess.Popen(action['command'], shell=True))
-            else:
-                subprocess.Popen(action['command'], shell=True)
-        else:
-            subprocess.Popen(action['command'], shell=True)
+        if action_id == 'toggle-dnd':
+            subprocess.run(['makoctl', 'mode', '-t', 'do-not-disturb'])
+            subprocess.run([
+                'notify-send', '-u', 'low', '-a', 'Mako',
+                '-i', 'preferences-system-notifications',
+                '-t', '2000', '-r', '9020',
+                'Do Not Disturb: ' + ('OFF' if dnd_active else 'ON')
+            ])
+        elif action_id == 'dismiss-all':
+            subprocess.run(['makoctl', 'dismiss', '--all'])
+            subprocess.run([
+                'notify-send', '-u', 'low', '-a', 'Mako',
+                '-i', 'edit-clear-all',
+                '-t', '2000', '-r', '9021',
+                'All notifications dismissed'
+            ])
+        elif action_id == 'restore':
+            subprocess.run(['makoctl', 'restore'])
+        elif action_id == 'invoke-last':
+            subprocess.run(['makoctl', 'invoke'])
         Gtk.main_quit()
     except Exception as e:
-        print(f"Error executing {action['label']}: {e}")
-        subprocess.run(['notify-send', '-u', 'critical', '-a', 'Waydroid', '-c', 'device.error', f'Error: {str(e)}', '-i', 'waydroid', '-t', '5000', '-r', '9002'])
+        print(f"Error executing action: {e}")
+        subprocess.run([
+            'notify-send', '-u', 'critical', '-a', 'Mako',
+            '-i', 'dialog-error', '-t', '3000', '-r', '9022',
+            'Mako Error', str(e)
+        ])
+
+# Actions
+ACTIONS = [
+    {
+        'id': 'toggle-dnd',
+        'label': 'Do Not Disturb: ' + ('ON' if dnd_active else 'OFF'),
+        'icon': '' if dnd_active else '',
+        'key': 'd',
+        'description': 'Turn ' + ('off' if dnd_active else 'on') + ' Do Not Disturb mode'
+    },
+    {
+        'id': 'dismiss-all',
+        'label': 'Dismiss All',
+        'icon': '',
+        'key': 'x',
+        'description': 'Dismiss all visible notifications'
+    },
+    {
+        'id': 'restore',
+        'label': 'Restore Last',
+        'icon': '',
+        'key': 'r',
+        'description': 'Restore last dismissed notification'
+    },
+    {
+        'id': 'invoke-last',
+        'label': 'Invoke Action',
+        'icon': '',
+        'key': 'i',
+        'description': 'Invoke default action on last notification'
+    }
+]
 
 # Header with close button
 header_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
 header_box.set_border_width(15)
 
-# Get status for header
-is_running = get_waydroid_status()
-status_text = "Running" if is_running else "Stopped"
-status_icon = "" if is_running else ""
+status_icon = "" if dnd_active else ""
+status_text = "Do Not Disturb" if dnd_active else f"{len(notifications)} in history"
 
 header_label = Gtk.Label()
 header_label.set_xalign(0)
-header_label.set_markup(f"<span size='large'><b> Waydroid</b></span> <small>({status_text})</small>")
+header_label.set_markup(f"<span size='large'><b>{status_icon} Notifications</b></span> <small>({status_text})</small>")
 header_label.set_hexpand(True)
 
 close_button = Gtk.Button(label="✕")
@@ -186,7 +196,7 @@ for action in ACTIONS:
 
     # Click handler
     def on_action_click(widget, event, act=action):
-        execute_action(act)
+        execute_action(act['id'])
 
     event_box.connect("button-press-event", on_action_click)
 
@@ -202,7 +212,74 @@ for action in ACTIONS:
 
     actions_box.pack_start(event_box, False, False, 0)
 
-main_box.pack_start(actions_box, True, True, 0)
+main_box.pack_start(actions_box, False, False, 0)
+
+# Notification history section
+if notifications:
+    separator2 = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
+    main_box.pack_start(separator2, False, False, 0)
+
+    history_header = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+    history_header.set_border_width(10)
+
+    history_label = Gtk.Label()
+    history_label.set_markup("<b>Recent Notifications</b>")
+    history_label.set_xalign(0)
+    history_header.pack_start(history_label, True, True, 0)
+
+    main_box.pack_start(history_header, False, False, 0)
+
+    # Scrollable notification list
+    scrolled = Gtk.ScrolledWindow()
+    scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+    scrolled.set_max_content_height(200)
+    scrolled.set_propagate_natural_height(True)
+
+    history_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+    history_box.set_border_width(8)
+
+    # Show last 5 notifications
+    for notif in notifications[:5]:
+        notif_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+        notif_box.set_border_width(8)
+        notif_box.get_style_context().add_class("notification-item")
+
+        # App name and summary
+        app_name = notif.get('app-name', {}).get('data', 'Unknown')
+        summary = notif.get('summary', {}).get('data', '')
+        body = notif.get('body', {}).get('data', '')
+
+        header = Gtk.Label()
+        header.set_markup(f"<small><b>{app_name}</b></small>")
+        header.set_xalign(0)
+        header.set_ellipsize(3)  # PANGO_ELLIPSIZE_END
+
+        if summary:
+            summary_label = Gtk.Label()
+            summary_label.set_text(summary)
+            summary_label.set_xalign(0)
+            summary_label.set_ellipsize(3)
+            summary_label.get_style_context().add_class("notification-summary")
+
+        if body:
+            body_label = Gtk.Label()
+            body_label.set_text(body[:100] + ('...' if len(body) > 100 else ''))
+            body_label.set_xalign(0)
+            body_label.set_line_wrap(True)
+            body_label.set_max_width_chars(40)
+            body_label.get_style_context().add_class("notification-body")
+
+        notif_box.pack_start(header, False, False, 0)
+        if summary:
+            notif_box.pack_start(summary_label, False, False, 0)
+        if body:
+            notif_box.pack_start(body_label, False, False, 0)
+
+        history_box.pack_start(notif_box, False, False, 0)
+
+    scrolled.add(history_box)
+    main_box.pack_start(scrolled, True, True, 0)
+
 main_container.pack_start(main_box, True, True, 0)
 win.add(main_container)
 
@@ -253,6 +330,18 @@ label {
 .close-button:hover {
     background-color: rgba(243, 139, 168, 0.5);
 }
+.notification-item {
+    background-color: rgba(137, 180, 250, 0.1);
+    border-radius: 6px;
+    margin: 2px 0;
+}
+.notification-summary {
+    color: #cdd6f4;
+}
+.notification-body {
+    color: #a6adc8;
+    font-size: 0.9em;
+}
 separator {
     background-color: rgba(137, 180, 250, 0.3);
     min-height: 1px;
@@ -279,7 +368,7 @@ def on_key_press(widget, event):
     # Handle action shortcuts
     for action in ACTIONS:
         if keyname == action['key']:
-            execute_action(action)
+            execute_action(action['id'])
             return True
 
     return False
