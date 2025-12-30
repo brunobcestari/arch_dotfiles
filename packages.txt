@@ -5,6 +5,7 @@
 ## Core Hyprland
 hyprland
 hyprlock
+hyprpolkitagent
 xdg-desktop-portal-hyprland
 
 ## Display Manager
