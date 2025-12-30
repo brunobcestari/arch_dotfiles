@@ -11,7 +11,7 @@
     "format-warning": "󰻠 {temperatureC}°C",
     "format-critical": "󰻠 {temperatureC}°C",
     "tooltip-format": "CPU: {temperatureC}°C (Tctl)",
-    "on-click": "alacritty -e btop"
+    "on-click": "psensor"
   },
 
   "temperature#gpu": {
@@ -26,6 +26,6 @@
     "format-warning": "󰢮 {temperatureC}°C",
     "format-critical": "󰢮 {temperatureC}°C",
     "tooltip-format": "GPU: {temperatureC}°C (Junction)",
-    "on-click": "alacritty -e btop"
+    "on-click": "psensor"
   }
 }

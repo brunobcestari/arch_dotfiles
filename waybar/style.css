@@ -264,7 +264,6 @@ window#waybar {
   color: #f38ba8;
   background: rgba(243, 139, 168, 0.2);
   border-radius: 6px;
-  text-align: center;
 }
 
 #custom-power:hover {
