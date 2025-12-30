@@ -92,14 +92,14 @@ def execute_action(action):
         if action['id'] == 'start':
             # Start in background
             subprocess.Popen(action['command'], shell=True)
-            subprocess.run(['notify-send', '-a', 'Waydroid', 'Android container starting...', '-i', 'android', '-t', '3000'])
+            subprocess.run(['notify-send', '-u', 'normal', '-a', 'Waydroid', 'Android container starting...', '-i', 'waydroid', '-t', '3000'])
         elif action['id'] == 'stop':
             subprocess.run(action['command'], shell=True, check=True)
-            subprocess.run(['notify-send', '-a', 'Waydroid', 'Android container stopped successfully', '-i', 'android', '-t', '3000'])
+            subprocess.run(['notify-send', '-u', 'normal', '-a', 'Waydroid', 'Container stopped successfully', '-i', 'waydroid', '-t', '3000'])
         elif action['id'] == 'show':
             # Ensure session is running first
             if not get_waydroid_status():
-                subprocess.run(['notify-send', '-a', 'Waydroid', 'Starting container before showing UI...', '-i', 'android', '-t', '3000'])
+                subprocess.run(['notify-send', '-u', 'normal', '-a', 'Waydroid', 'Starting container...', '-i', 'waydroid', '-t', '3000'])
                 subprocess.Popen('waydroid session start', shell=True)
                 GLib.timeout_add(2000, lambda: subprocess.Popen(action['command'], shell=True))
             else:
@@ -109,7 +109,7 @@ def execute_action(action):
         Gtk.main_quit()
     except Exception as e:
         print(f"Error executing {action['label']}: {e}")
-        subprocess.run(['notify-send', '-a', 'Waydroid', f'Error: {str(e)}', '-i', 'error', '-t', '5000'])
+        subprocess.run(['notify-send', '-u', 'critical', '-a', 'Waydroid', f'Error: {str(e)}', '-i', 'waydroid', '-t', '5000'])
 
 # Header with close button
 header_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)

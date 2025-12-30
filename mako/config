@@ -21,7 +21,7 @@ ignore-timeout=0
 # Icons
 icons=1
 max-icon-size=64
-icon-path=/home/bruno/.local/share/icons/hicolor
+icon-path=/usr/share/icons/hicolor
 
 # Grouping
 group-by=app-name

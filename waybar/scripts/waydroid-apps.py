@@ -93,17 +93,17 @@ def launch_app(package_name, app_name):
     try:
         # Check if session is running
         if not get_waydroid_status():
-            subprocess.run(['notify-send', '-a', 'Waydroid', f'Starting container to launch {app_name}...', '-i', 'android', '-t', '3000'])
+            subprocess.run(['notify-send', '-u', 'normal', '-a', 'Waydroid', f'Starting container to launch {app_name}...', '-i', 'waydroid', '-t', '3000'])
             subprocess.Popen('waydroid session start', shell=True)
             # Wait a bit then launch the app
             GLib.timeout_add(3000, lambda: subprocess.Popen(['waydroid', 'app', 'launch', package_name]))
         else:
             subprocess.Popen(['waydroid', 'app', 'launch', package_name])
-            subprocess.run(['notify-send', '-a', 'Waydroid', f'Opening {app_name}', '-i', 'android', '-t', '2000'])
+            subprocess.run(['notify-send', '-u', 'low', '-a', 'Waydroid', f'Opening {app_name}', '-i', 'waydroid', '-t', '2000'])
         Gtk.main_quit()
     except Exception as e:
         print(f"Error launching {app_name}: {e}")
-        subprocess.run(['notify-send', '-a', 'Waydroid', f'Failed to launch {app_name}: {str(e)}', '-i', 'error', '-t', '5000'])
+        subprocess.run(['notify-send', '-u', 'critical', '-a', 'Waydroid', f'Failed to launch {app_name}: {str(e)}', '-i', 'waydroid', '-t', '5000'])
 
 # Header with close button
 header_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)

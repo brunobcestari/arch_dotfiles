@@ -37,6 +37,7 @@
 "psensor" = ""
 "pavucontrol" = "󱡫"
 "waydroid" = ""
+"podman" = ""
 
 [other]
 fallback_icon = ""
