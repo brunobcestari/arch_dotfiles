@@ -28,6 +28,7 @@ readonly CONFIG_DIRS=(
     "alacritty"
     "xdg-desktop-portal"
     "rofi"
+    "waybar"
 )
 
 # Home directory files (source -> ~/destination)
@@ -147,6 +148,18 @@ prompt_yes_no() {
     [[ "$answer" =~ ^[Yy]$ ]]
 }
 
+# Check if a package was selected for installation
+# Usage: is_package_selected "package_name"
+is_package_selected() {
+    local package_name="$1"
+    for key in "${APP_ORDER[@]}"; do
+        if [[ "${APP_NAMES[$key]}" == "$package_name" ]] && [[ "${INSTALL_OPTIONAL[$key]:-}" == "yes" ]]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
 cleanup() {
     local exit_code=$?
     if [[ $exit_code -ne 0 ]]; then
@@ -221,7 +234,7 @@ verify_source_structure() {
     local essential_files=(
         "$SCRIPT_DIR/packages.txt"
         "$SCRIPT_DIR/optional-apps.conf"
-        "$SCRIPT_DIR/waybar"
+        "$SCRIPT_DIR/hypr/autostart.conf.tpl"
         "$SCRIPT_DIR/sddm"
         "$SCRIPT_DIR/ps1/custom_ps1.sh"
     )
@@ -250,7 +263,8 @@ verify_source_structure() {
 
     # Check conditional configs (these might not exist, so just warn)
     for config in "${CONDITIONAL_CONFIGS[@]}"; do
-        local source_dir="$(echo "$config" | cut -d: -f2)"
+        local source_dir
+        IFS=':' read -r _ source_dir _ <<< "$config"
         if [[ ! -d "$SCRIPT_DIR/$source_dir" ]]; then
             log_warning "Optional config not found: $SCRIPT_DIR/$source_dir (will skip if selected)"
         fi
@@ -491,7 +505,7 @@ install_packages() {
     log_info "Installing packages with paru..."
     if [[ "$DRY_RUN" == "true" ]]; then
         echo -e "${YELLOW}[DRY-RUN]${NC} Would install packages:"
-        cat "$temp_packages" | sed 's/^/  - /'
+        sed 's/^/  - /' "$temp_packages"
     else
         if paru -S --noconfirm --needed - < "$temp_packages"; then
             log_success "Packages installed successfully"
@@ -520,9 +534,6 @@ backup_existing_configs() {
         configs_to_backup+=("$CONFIG_HOME/$dest_dir")
     done
 
-    # Add waybar (special case, always backed up)
-    configs_to_backup+=("$CONFIG_HOME/waybar")
-
     # Add home files
     for file_mapping in "${HOME_FILES[@]}"; do
         local dest_file="${file_mapping##*:}"
@@ -534,7 +545,8 @@ backup_existing_configs() {
 
     # Add conditional configs if they exist
     for config in "${CONDITIONAL_CONFIGS[@]}"; do
-        local dest_dir="$(echo "$config" | cut -d: -f3)"
+        local dest_dir
+        IFS=':' read -r _ _ dest_dir <<< "$config"
         if [[ -e "$CONFIG_HOME/$dest_dir" ]]; then
             configs_to_backup+=("$CONFIG_HOME/$dest_dir")
         fi
@@ -595,24 +607,12 @@ create_config_directories() {
         run_cmd mkdir -p "$CONFIG_HOME/$dest_dir"
     done
 
-    # Create waybar (special case with subdirectories)
-    run_cmd mkdir -p "$CONFIG_HOME/waybar"/{scripts,modules,menus}
-
     # Create conditional config directories if selected
     for config in "${CONDITIONAL_CONFIGS[@]}"; do
-        local package_name="$(echo "$config" | cut -d: -f1)"
-        local dest_dir="$(echo "$config" | cut -d: -f3)"
+        local package_name source_dir dest_dir
+        IFS=':' read -r package_name source_dir dest_dir <<< "$config"
 
-        # Check if this package was selected
-        local package_selected=false
-        for key in "${APP_ORDER[@]}"; do
-            if [[ "${APP_NAMES[$key]}" == "$package_name" ]] && [[ "${INSTALL_OPTIONAL[$key]:-}" == "yes" ]]; then
-                package_selected=true
-                break
-            fi
-        done
-
-        if [[ "$package_selected" == "true" ]]; then
+        if is_package_selected "$package_name"; then
             run_cmd mkdir -p "$CONFIG_HOME/$dest_dir"
         fi
     done
@@ -634,21 +634,12 @@ copy_configuration_files() {
         fi
     done
 
-    # Copy Waybar configs with modular structure (special case)
-    run_cmd cp "$SCRIPT_DIR/waybar"/config-*.jsonc "$CONFIG_HOME/waybar/"
-    run_cmd cp "$SCRIPT_DIR/waybar/style.css" "$CONFIG_HOME/waybar/"
-    run_cmd cp -r "$SCRIPT_DIR/waybar/scripts"/* "$CONFIG_HOME/waybar/scripts/"
-    run_cmd cp -r "$SCRIPT_DIR/waybar/modules"/* "$CONFIG_HOME/waybar/modules/"
+    # Make waybar scripts executable (use find to handle empty globs safely)
     if [[ "$DRY_RUN" == "true" ]]; then
-        echo -e "${YELLOW}[DRY-RUN]${NC} Would run: cp -r $SCRIPT_DIR/waybar/menus/* $CONFIG_HOME/waybar/menus/"
+        echo -e "${YELLOW}[DRY-RUN]${NC} Would make waybar scripts executable"
     else
-        cp -r "$SCRIPT_DIR/waybar/menus"/* "$CONFIG_HOME/waybar/menus/" 2>/dev/null || true
+        find "$CONFIG_HOME/waybar/scripts" -type f \( -name "*.sh" -o -name "*.py" \) -exec chmod +x {} + 2>/dev/null || true
     fi
-
-    # Make waybar scripts executable
-    run_cmd chmod +x "$CONFIG_HOME/waybar/scripts"/*.sh
-    run_cmd chmod +x "$CONFIG_HOME/waybar/scripts"/*.py
-    log_info "Copied waybar config"
 
     # Copy home directory files
     for file_mapping in "${HOME_FILES[@]}"; do
@@ -663,24 +654,12 @@ copy_configuration_files() {
 
     # Copy conditional configs if selected
     for config in "${CONDITIONAL_CONFIGS[@]}"; do
-        local package_name="$(echo "$config" | cut -d: -f1)"
-        local source_dir="$(echo "$config" | cut -d: -f2)"
-        local dest_dir="$(echo "$config" | cut -d: -f3)"
+        local package_name source_dir dest_dir
+        IFS=':' read -r package_name source_dir dest_dir <<< "$config"
 
-        # Check if this package was selected
-        local package_selected=false
-        for key in "${APP_ORDER[@]}"; do
-            if [[ "${APP_NAMES[$key]}" == "$package_name" ]] && [[ "${INSTALL_OPTIONAL[$key]:-}" == "yes" ]]; then
-                package_selected=true
-                break
-            fi
-        done
-
-        if [[ "$package_selected" == "true" ]]; then
-            if [[ -d "$SCRIPT_DIR/$source_dir" ]]; then
-                run_cmd cp -r "$SCRIPT_DIR/$source_dir"/* "$CONFIG_HOME/$dest_dir/"
-                log_info "Copied $source_dir config"
-            fi
+        if is_package_selected "$package_name" && [[ -d "$SCRIPT_DIR/$source_dir" ]]; then
+            run_cmd cp -r "$SCRIPT_DIR/$source_dir"/* "$CONFIG_HOME/$dest_dir/"
+            log_info "Copied $source_dir config"
         fi
     done
 
@@ -689,59 +668,63 @@ copy_configuration_files() {
 
 generate_autostart_config() {
     log_info "Generating autostart configuration..."
-    
+
     local autostart_file="$CONFIG_HOME/hypr/autostart.conf"
-    
-    cat > "$autostart_file" << 'EOF'
-#################
-### AUTOSTART ###
-#################
+    local autostart_template="$SCRIPT_DIR/hypr/autostart.conf.tpl"
 
-# Autostart necessary processes (like notifications daemons, status bars, etc.)
-# See https://wiki.hypr.land/Configuring/Keywords/
+    # Verify template exists
+    if [[ ! -f "$autostart_template" ]]; then
+        log_error "Autostart template not found: $autostart_template"
+        exit 1
+    fi
 
-# Add essential autostart entries
-# Start Waybar (top and bottom bars)
-exec-once = waybar -c ~/.config/waybar/config-top.jsonc
-exec-once = waybar -c ~/.config/waybar/config-bottom.jsonc
-exec-once = waybar -c ~/.config/waybar/config-bottom-secondary.jsonc
+    if [[ "$DRY_RUN" == "true" ]]; then
+        echo -e "${YELLOW}[DRY-RUN]${NC} Would copy: $autostart_template -> $autostart_file"
+        # Show what autostart entries would be added
+        for key in "${APP_ORDER[@]}"; do
+            if [[ "${INSTALL_OPTIONAL[$key]:-}" == "yes" ]] && [[ "${APP_AUTOSTART[$key]}" == "yes" ]]; then
+                local name="${APP_NAMES[$key]}"
+                local startup_cmd="${APP_STARTUP_CMDS[$key]}"
+                echo -e "${YELLOW}[DRY-RUN]${NC} Would add autostart: $name ($startup_cmd)"
+            fi
+        done
+        log_success "Autostart configuration generated"
+        return
+    fi
 
-# Start Mako (notifications)
-exec-once = mako
+    # Copy base configuration from template
+    cp "$autostart_template" "$autostart_file"
 
-EOF
-    
     # Add applications based on user selection
     local has_personal_apps=false
-    
+
     for key in "${APP_ORDER[@]}"; do
         if [[ "${INSTALL_OPTIONAL[$key]:-}" == "yes" ]]; then
             local autostart="${APP_AUTOSTART[$key]}"
-            
+
             if [[ "$autostart" == "yes" ]]; then
                 local name="${APP_NAMES[$key]}"
                 local startup_cmd="${APP_STARTUP_CMDS[$key]}"
                 local description="${APP_DESCRIPTIONS[$key]}"
-                
+
                 # Add comment with description
                 if [[ -n "$description" ]]; then
                     echo "# $description" >> "$autostart_file"
                 else
                     echo "# $name" >> "$autostart_file"
                 fi
-                
+
                 # Add startup command
                 echo "exec-once = $startup_cmd" >> "$autostart_file"
                 has_personal_apps=true
             fi
         fi
     done
-    
+
     if [[ "$has_personal_apps" == "true" ]]; then
         echo "" >> "$autostart_file"
     fi
-    
-    
+
     log_success "Autostart configuration generated"
 }
 
@@ -792,15 +775,7 @@ install_sddm_configs() {
 
 setup_vim() {
     # Check if vim was selected
-    local vim_selected=false
-    for key in "${APP_ORDER[@]}"; do
-        if [[ "${APP_CATEGORIES[$key]}" == "development" ]] && [[ "${APP_NAMES[$key]}" == "vim" ]] && [[ "${INSTALL_OPTIONAL[$key]:-}" == "yes" ]]; then
-            vim_selected=true
-            break
-        fi
-    done
-    
-    if [[ "$vim_selected" == "false" ]]; then
+    if ! is_package_selected "vim"; then
         log_info "Skipping Vim setup (not selected)"
         return
     fi
@@ -895,12 +870,9 @@ show_summary() {
     echo "  ✓ Alacritty terminal with Tokyo Night theme"
     
     # Check if vim is installed
-    for key in "${APP_ORDER[@]}"; do
-        if [[ "${APP_CATEGORIES[$key]}" == "development" ]] && [[ "${APP_NAMES[$key]}" == "vim" ]] && [[ "${INSTALL_OPTIONAL[$key]:-}" == "yes" ]]; then
-            echo "  ✓ Vim with NERDTree, coc.nvim, and colorschemes"
-            break
-        fi
-    done
+    if is_package_selected "vim"; then
+        echo "  ✓ Vim with NERDTree, coc.nvim, and colorschemes"
+    fi
     
     echo "  ✓ Custom colorful bash prompt with git branch"
     echo "  ✓ PipeWire audio with GTK device selector popups"
