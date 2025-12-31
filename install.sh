@@ -846,7 +846,7 @@ show_summary() {
     echo ""
     echo "To finish setup:"
     echo "1. Reboot your system (or log out and back in for PS1)"
-    echo "2. Select 'Hyprland' from tuigreet login screen"
+    echo "2. Select 'Hyprland (uwsm)' from ReGreet login screen"
     echo "3. Press Super+Return to open terminal"
     echo "4. Enjoy your setup!"
     echo ""

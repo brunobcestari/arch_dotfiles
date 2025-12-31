@@ -10,7 +10,7 @@ xdg-desktop-portal-hyprland
 
 ## Display Manager (greetd + tuigreet)
 greetd
-greetd-tuigreet
+greetd-regreet
 
 ## Session Manager
 uwsm
