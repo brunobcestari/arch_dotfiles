@@ -9,7 +9,11 @@ hyprpolkitagent
 xdg-desktop-portal-hyprland
 
 ## Display Manager
-sddm
+ly
+
+## Session Manager
+uwsm
+dbus-broker
 
 ## Status Bar & Widgets
 waybar

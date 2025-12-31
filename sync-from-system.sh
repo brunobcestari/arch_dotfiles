@@ -28,6 +28,7 @@ readonly CONFIG_DIRS=(
     "xdg-desktop-portal"
     "rofi"
     "waybar"
+    "uwsm"
 )
 
 # Home directory files (system_path:repo_path)
@@ -201,34 +202,31 @@ sync_system_file() {
     fi
 }
 
-sync_sddm_configs() {
-    if [[ "$DRY_RUN" == "true" ]]; then
-        echo -e "${YELLOW}[DRY-RUN]${NC} Would sync SDDM configs from /etc/sddm.conf.d/"
+sync_ly_config() {
+    local ly_config="/etc/ly/config.ini"
+
+    if [[ ! -f "$ly_config" ]]; then
+        log_warning "Ly config not found: $ly_config (skipping)"
         return
     fi
 
-    log_info "Syncing SDDM configs (requires sudo)..."
+    if [[ "$DRY_RUN" == "true" ]]; then
+        echo -e "${YELLOW}[DRY-RUN]${NC} Would sync Ly config from $ly_config"
+        return
+    fi
+
+    log_info "Syncing Ly config (requires sudo)..."
 
     if ! sudo -v; then
-        log_error "sudo access required for SDDM configs"
+        log_error "sudo access required for Ly config"
         return 1
     fi
 
-    mkdir -p "$SCRIPT_DIR/sddm"
+    mkdir -p "$SCRIPT_DIR/ly"
+    sudo cp "$ly_config" "$SCRIPT_DIR/ly/config.ini"
+    sudo chown "$USER:$USER" "$SCRIPT_DIR/ly/config.ini"
 
-    # Copy conf files
-    if [[ -d "/etc/sddm.conf.d" ]]; then
-        sudo cp /etc/sddm.conf.d/*.conf "$SCRIPT_DIR/sddm/" 2>/dev/null || true
-        sudo chown "$USER:$USER" "$SCRIPT_DIR/sddm/"*.conf 2>/dev/null || true
-    fi
-
-    # Copy Xsetup script
-    if [[ -f "/usr/share/sddm/scripts/Xsetup" ]]; then
-        sudo cp /usr/share/sddm/scripts/Xsetup "$SCRIPT_DIR/sddm/"
-        sudo chown "$USER:$USER" "$SCRIPT_DIR/sddm/Xsetup"
-    fi
-
-    log_success "SDDM configs synced"
+    log_success "Ly config synced"
 }
 
 show_changes() {
@@ -342,9 +340,9 @@ main() {
         fi
     fi
 
-    # Sync SDDM configs
-    if [[ "$DRY_RUN" == "true" ]] || prompt_yes_no "Sync SDDM configs? (requires sudo)" "y"; then
-        sync_sddm_configs
+    # Sync Ly display manager config
+    if [[ "$DRY_RUN" == "true" ]] || prompt_yes_no "Sync Ly config? (requires sudo)" "y"; then
+        sync_ly_config
     fi
 
     echo ""

@@ -29,6 +29,7 @@ readonly CONFIG_DIRS=(
     "xdg-desktop-portal"
     "rofi"
     "waybar"
+    "uwsm"
 )
 
 # Home directory files (source -> ~/destination)
@@ -235,7 +236,7 @@ verify_source_structure() {
         "$SCRIPT_DIR/packages.txt"
         "$SCRIPT_DIR/optional-apps.conf"
         "$SCRIPT_DIR/hypr/autostart.conf.tpl"
-        "$SCRIPT_DIR/sddm"
+        "$SCRIPT_DIR/ly/config.ini"
         "$SCRIPT_DIR/ps1/custom_ps1.sh"
     )
 
@@ -728,49 +729,31 @@ generate_autostart_config() {
     log_success "Autostart configuration generated"
 }
 
-install_sddm_configs() {
-    log_info "Installing SDDM configs (requires sudo)..."
+install_ly_config() {
+    log_info "Installing Ly display manager config (requires sudo)..."
+
+    local ly_config="$SCRIPT_DIR/ly/config.ini"
+
+    if [[ ! -f "$ly_config" ]]; then
+        log_error "Ly config not found: $ly_config"
+        exit 1
+    fi
 
     if [[ "$DRY_RUN" == "true" ]]; then
-        echo -e "${YELLOW}[DRY-RUN]${NC} Would run: sudo mkdir -p /etc/sddm.conf.d"
-        for conf_file in "$SCRIPT_DIR/sddm"/*.conf; do
-            if [[ -f "$conf_file" ]]; then
-                echo -e "${YELLOW}[DRY-RUN]${NC} Would run: sudo cp $conf_file /etc/sddm.conf.d/"
-            fi
-        done
-        if [[ -f "$SCRIPT_DIR/sddm/Xsetup" ]]; then
-            echo -e "${YELLOW}[DRY-RUN]${NC} Would run: sudo cp $SCRIPT_DIR/sddm/Xsetup /usr/share/sddm/scripts/Xsetup"
-            echo -e "${YELLOW}[DRY-RUN]${NC} Would run: sudo chmod +x /usr/share/sddm/scripts/Xsetup"
-        fi
+        echo -e "${YELLOW}[DRY-RUN]${NC} Would run: sudo cp $ly_config /etc/ly/config.ini"
         return
     fi
 
     if ! sudo -v; then
-        log_error "sudo access required for SDDM installation"
+        log_error "sudo access required for Ly installation"
         exit 1
     fi
 
-    sudo mkdir -p /etc/sddm.conf.d
+    # Ly creates /etc/ly on package install, but ensure it exists
+    sudo mkdir -p /etc/ly
+    sudo cp "$ly_config" /etc/ly/config.ini
 
-    # Copy SDDM conf files
-    local found_conf=false
-    for conf_file in "$SCRIPT_DIR/sddm"/*.conf; do
-        if [[ -f "$conf_file" ]]; then
-            sudo cp "$conf_file" /etc/sddm.conf.d/
-            found_conf=true
-        fi
-    done
-    [[ "$found_conf" == "false" ]] && log_warning "No SDDM conf files found"
-
-    # Copy Xsetup script
-    if [[ -f "$SCRIPT_DIR/sddm/Xsetup" ]]; then
-        sudo cp "$SCRIPT_DIR/sddm/Xsetup" /usr/share/sddm/scripts/Xsetup
-        sudo chmod +x /usr/share/sddm/scripts/Xsetup
-    else
-        log_warning "No Xsetup script found"
-    fi
-
-    log_success "SDDM configs installed"
+    log_success "Ly config installed"
 }
 
 setup_vim() {
@@ -842,13 +825,23 @@ setup_custom_ps1() {
 enable_services() {
     log_info "Enabling services..."
 
+    # Ly runs on a specific TTY (tty1 is the default console)
+    # We need to enable ly@ttyX and disable getty@ttyX for the same TTY
+    local ly_tty="tty1"
+
     if [[ "$DRY_RUN" == "true" ]]; then
-        echo -e "${YELLOW}[DRY-RUN]${NC} Would run: sudo systemctl enable sddm.service"
+        echo -e "${YELLOW}[DRY-RUN]${NC} Would run: sudo systemctl disable getty@${ly_tty}.service"
+        echo -e "${YELLOW}[DRY-RUN]${NC} Would run: sudo systemctl enable ly@${ly_tty}.service"
         return
     fi
 
-    sudo systemctl enable sddm.service
-    log_success "Services enabled"
+    # Disable getty on the TTY where Ly will run
+    sudo systemctl disable "getty@${ly_tty}.service" 2>/dev/null || true
+
+    # Enable Ly on that TTY
+    sudo systemctl enable "ly@${ly_tty}.service"
+
+    log_success "Ly display manager enabled on ${ly_tty}"
 }
 
 # ============================================================================
@@ -861,7 +854,7 @@ show_summary() {
     echo ""
     echo "To finish setup:"
     echo "1. Reboot your system (or log out and back in for PS1)"
-    echo "2. Select 'Hyprland' from SDDM login screen"
+    echo "2. Select 'Hyprland' from Ly login screen"
     echo "3. Press Super+Return to open terminal"
     echo "4. Enjoy your setup!"
     echo ""
@@ -993,7 +986,7 @@ main() {
     create_config_directories
     copy_configuration_files
     generate_autostart_config
-    install_sddm_configs
+    install_ly_config
     setup_vim
     setup_custom_ps1
     enable_services
