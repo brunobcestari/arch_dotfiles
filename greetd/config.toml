@@ -1,0 +1,17 @@
+# greetd configuration
+# See: https://man.archlinux.org/man/greetd.5
+
+[terminal]
+# The VT to run the greeter on
+vt = 1
+
+[default_session]
+# tuigreet with Wayland session support
+# --remember: pre-fill last username
+# --remember-session: remember last session selection
+# --time: show current time
+# --asterisks: show asterisks when typing password
+# --sessions: path to wayland session files
+#command = "tuigreet --remember --remember-session --time --asterisks --sessions /usr/share/wayland-sessions"
+command = "start-hyprland -- -c /etc/greetd/hyprland.conf"
+user = "greeter"

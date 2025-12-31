@@ -202,31 +202,31 @@ sync_system_file() {
     fi
 }
 
-sync_ly_config() {
-    local ly_config="/etc/ly/config.ini"
+sync_greetd_config() {
+    local greetd_config="/etc/greetd/config.toml"
 
-    if [[ ! -f "$ly_config" ]]; then
-        log_warning "Ly config not found: $ly_config (skipping)"
+    if [[ ! -f "$greetd_config" ]]; then
+        log_warning "greetd config not found: $greetd_config (skipping)"
         return
     fi
 
     if [[ "$DRY_RUN" == "true" ]]; then
-        echo -e "${YELLOW}[DRY-RUN]${NC} Would sync Ly config from $ly_config"
+        echo -e "${YELLOW}[DRY-RUN]${NC} Would sync greetd config from $greetd_config"
         return
     fi
 
-    log_info "Syncing Ly config (requires sudo)..."
+    log_info "Syncing greetd config (requires sudo)..."
 
     if ! sudo -v; then
-        log_error "sudo access required for Ly config"
+        log_error "sudo access required for greetd config"
         return 1
     fi
 
-    mkdir -p "$SCRIPT_DIR/ly"
-    sudo cp "$ly_config" "$SCRIPT_DIR/ly/config.ini"
-    sudo chown "$USER:$USER" "$SCRIPT_DIR/ly/config.ini"
+    mkdir -p "$SCRIPT_DIR/greetd"
+    sudo cp "$greetd_config" "$SCRIPT_DIR/greetd/config.toml"
+    sudo chown "$USER:$USER" "$SCRIPT_DIR/greetd/config.toml"
 
-    log_success "Ly config synced"
+    log_success "greetd config synced"
 }
 
 show_changes() {
@@ -340,9 +340,9 @@ main() {
         fi
     fi
 
-    # Sync Ly display manager config
-    if [[ "$DRY_RUN" == "true" ]] || prompt_yes_no "Sync Ly config? (requires sudo)" "y"; then
-        sync_ly_config
+    # Sync greetd display manager config
+    if [[ "$DRY_RUN" == "true" ]] || prompt_yes_no "Sync greetd config? (requires sudo)" "y"; then
+        sync_greetd_config
     fi
 
     echo ""

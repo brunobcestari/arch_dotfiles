@@ -8,8 +8,9 @@ hyprlock
 hyprpolkitagent
 xdg-desktop-portal-hyprland
 
-## Display Manager
-ly
+## Display Manager (greetd + tuigreet)
+greetd
+greetd-tuigreet
 
 ## Session Manager
 uwsm
