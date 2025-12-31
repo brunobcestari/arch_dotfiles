@@ -733,6 +733,7 @@ install_greetd_config() {
     log_info "Installing greetd display manager config (requires sudo)..."
 
     local greetd_config="$SCRIPT_DIR/greetd/config.toml"
+    local greetd_path="$SCRIPT_DIR/greetd"
 
     if [[ ! -f "$greetd_config" ]]; then
         log_error "greetd config not found: $greetd_config"
@@ -740,7 +741,7 @@ install_greetd_config() {
     fi
 
     if [[ "$DRY_RUN" == "true" ]]; then
-        echo -e "${YELLOW}[DRY-RUN]${NC} Would run: sudo cp $greetd_config /etc/greetd/config.toml"
+        echo -e "${YELLOW}[DRY-RUN]${NC} Would run: sudo cp $greetd_path/* /etc/greetd/"
         return
     fi
 
@@ -751,7 +752,7 @@ install_greetd_config() {
 
     # greetd creates /etc/greetd on package install, but ensure it exists
     sudo mkdir -p /etc/greetd
-    sudo cp "$greetd_config" /etc/greetd/config.toml
+    sudo cp $SCRIPT_DIR/greetd/* /etc/greetd/
 
     log_success "greetd config installed"
 }

@@ -204,6 +204,7 @@ sync_system_file() {
 
 sync_greetd_config() {
     local greetd_config="/etc/greetd/config.toml"
+    local greetd_path="/etc/greetd"
 
     if [[ ! -f "$greetd_config" ]]; then
         log_warning "greetd config not found: $greetd_config (skipping)"
@@ -211,7 +212,7 @@ sync_greetd_config() {
     fi
 
     if [[ "$DRY_RUN" == "true" ]]; then
-        echo -e "${YELLOW}[DRY-RUN]${NC} Would sync greetd config from $greetd_config"
+        echo -e "${YELLOW}[DRY-RUN]${NC} Would sync greetd config from $greetd_path"
         return
     fi
 
@@ -223,8 +224,8 @@ sync_greetd_config() {
     fi
 
     mkdir -p "$SCRIPT_DIR/greetd"
-    sudo cp "$greetd_config" "$SCRIPT_DIR/greetd/config.toml"
-    sudo chown "$USER:$USER" "$SCRIPT_DIR/greetd/config.toml"
+    sudo cp "$greetd_path"/* "$SCRIPT_DIR/greetd/"
+    sudo chown "$USER:$USER" "$SCRIPT_DIR"/greetd/*
 
     log_success "greetd config synced"
 }
