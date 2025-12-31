@@ -1,5 +1,5 @@
 {
-  "output": "$MONITOR_PRIMARY",
+  "output": "DP-1",
   "layer": "top",
   "position": "bottom",
   "height": 30,
