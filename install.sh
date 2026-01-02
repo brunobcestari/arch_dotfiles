@@ -84,6 +84,7 @@ DESCRIPTION:
     - Install selected packages with paru
     - Copy configuration files
     - Set up services and system integration
+    - Optionally configure display settings (resolution, position, scale)
 
 CONFIGURATION FILES:
     packages.txt         - Essential packages installed by default
@@ -920,6 +921,35 @@ enable_services() {
     log_success "greetd display manager enabled"
 }
 
+configure_displays() {
+    local detect_script="$SCRIPT_DIR/scripts/detect-displays.sh"
+
+    if [[ ! -x "$detect_script" ]]; then
+        log_warning "Display detection script not found, skipping"
+        return
+    fi
+
+    echo ""
+    log_info "Display Configuration"
+    echo "================================================================"
+    echo "The display detection script can configure your monitors"
+    echo "(resolution, refresh rate, positioning) for Hyprland."
+    echo ""
+
+    if [[ "$DRY_RUN" == "true" ]]; then
+        echo -e "${YELLOW}[DRY-RUN]${NC} Would prompt to run: $detect_script"
+        return
+    fi
+
+    if prompt_yes_no "Would you like to configure your displays now?" "y"; then
+        echo ""
+        "$detect_script"
+    else
+        log_info "Skipping display configuration"
+        echo "You can run it later with: $detect_script"
+    fi
+}
+
 # ============================================================================
 # Main Function
 # ============================================================================
@@ -1046,6 +1076,9 @@ main() {
     setup_vim
     setup_custom_ps1
     enable_services
+
+    # Configure displays (after all configs are copied)
+    configure_displays
 
     # Show summary
     show_summary

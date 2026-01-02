@@ -1,5 +1,5 @@
 {
-  "output": "$MONITOR_SECONDARY",
+  "output": [ "!$MONITOR_PRIMARY", "*" ],
   "layer": "top",
   "position": "bottom",
   "height": 30,

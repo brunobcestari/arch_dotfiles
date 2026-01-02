@@ -2,10 +2,6 @@
 # These are exported to the systemd user session and all graphical apps
 # See: https://wiki.archlinux.org/title/Universal_Wayland_Session_Manager
 
-# Monitor configuration (used by waybar templates via envsubst)
-export MONITOR_PRIMARY=DP-1
-export MONITOR_SECONDARY=DP-2
-
 # Cursor size
 export XCURSOR_SIZE=24
 export HYPRCURSOR_SIZE=24
