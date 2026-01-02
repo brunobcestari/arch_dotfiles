@@ -2,6 +2,8 @@
 
 Personal dotfiles for Arch Linux with Hyprland window manager.
 
+![Screenshot](screenshots/screenshot1.png)
+
 ## Features
 
 - **Window Manager**: Hyprland (Wayland compositor)
