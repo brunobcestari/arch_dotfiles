@@ -312,58 +312,168 @@ load_optional_apps() {
     done < "$config_file"
 }
 
-display_category_packages() {
-    local category="$1"
-    local indent="  "
-
-    for key in "${APP_ORDER[@]}"; do
-        if [[ "${APP_CATEGORIES[$key]}" == "$category" ]]; then
-            local name="${APP_NAMES[$key]}"
-            local description="${APP_DESCRIPTIONS[$key]}"
-            local repo="${APP_REPOS[$key]}"
-
-            if [[ -n "$description" ]]; then
-                echo "${indent}✓ $name - $description [$repo]"
-            else
-                echo "${indent}✓ $name [$repo]"
-            fi
-        fi
-    done
-}
-
-prompt_category_selection() {
-    local category="$1"
-    local category_display="$2"
-    local default_install="$3"
+# Interactive multi-select menu for package selection
+# Usage: multiselect_menu "Category Name" category_key
+multiselect_menu() {
+    local category_display="$1"
+    local category="$2"
 
     # Get all apps in this category
-    local apps=()
-    local count=0
+    local -a keys=()
+    local -a selected=()
 
     for key in "${APP_ORDER[@]}"; do
         if [[ "${APP_CATEGORIES[$key]}" == "$category" ]]; then
-            apps+=("$key")
-            count=$((count + 1))
+            keys+=("$key")
+            selected+=(1)  # All selected by default
         fi
     done
 
+    local count=${#keys[@]}
     if [[ $count -eq 0 ]]; then
         return
     fi
 
-    echo ""
-    echo -e "${BLUE}$category_display:${NC}"
-    display_category_packages "$category"
+    local cur=0
+    local esc
+    esc=$(printf '\033')
 
     echo ""
-    local default_answer="y"
-    [[ "$default_install" != "all" ]] && default_answer="n"
+    echo -e "${BLUE}${category_display}:${NC}"
+    echo -e "${YELLOW}  Use ↑/↓ to navigate, SPACE or ENTER to confirm, any key to toggle${NC}"
+    echo ""
 
-    if prompt_yes_no "Install $category_display?" "$default_answer"; then
-        for key in "${apps[@]}"; do
-            INSTALL_OPTIONAL[$key]="yes"
+    # Clear any pending input in the buffer and wait a moment
+    read -t 0.1 -n 10000 discard < /dev/tty 2>/dev/null || true
+    sleep 0.1
+
+    # Hide cursor and set trap to restore it on interrupt
+    printf '\033[?25l'
+    trap 'printf "\033[?25h"; exit 130' INT
+
+    while true; do
+        # Render the menu
+        local index=0
+        for key in "${keys[@]}"; do
+            local name="${APP_NAMES[$key]}"
+            local description="${APP_DESCRIPTIONS[$key]}"
+            local repo="${APP_REPOS[$key]}"
+
+            # Build the checkbox
+            local checkbox
+            if [[ ${selected[$index]} -eq 1 ]]; then
+                checkbox="${GREEN}[x]${NC}"
+            else
+                checkbox="[ ]"
+            fi
+
+            # Build the label
+            local label
+            if [[ -n "$description" ]]; then
+                label="$name - $description ${BLUE}[$repo]${NC}"
+            else
+                label="$name ${BLUE}[$repo]${NC}"
+            fi
+
+            # Highlight current item
+            if [[ $index -eq $cur ]]; then
+                echo -e "  ${YELLOW}>${NC} $checkbox $label"
+            else
+                echo -e "    $checkbox $label"
+            fi
+
+            ((++index))
         done
-    fi
+
+        # Read user input from terminal
+        read -rsn1 key < /dev/tty
+
+        if [[ "$key" == "$esc" ]]; then
+            # Read the rest of the escape sequence
+            read -rsn2 -t 0.1 key < /dev/tty
+            if [[ "$key" == "[A" ]]; then
+                # Up arrow
+                if [[ $cur -eq 0 ]]; then
+                    cur=$((count - 1))
+                else
+                    cur=$((cur - 1))
+                fi
+            elif [[ "$key" == "[B" ]]; then
+                # Down arrow
+                cur=$((cur + 1))
+                if [[ $cur -ge $count ]]; then
+                    cur=0
+                fi
+            fi
+        elif [[ -z "$key" ]]; then
+            # Enter - confirm (empty string)
+            break
+        else
+            # Any other key (including space) - toggle selection
+            if [[ ${selected[$cur]} -eq 1 ]]; then
+                selected[$cur]=0
+            else
+                selected[$cur]=1
+            fi
+        fi
+
+        # Move cursor up to re-render
+        printf '\033[%dA' "$count"
+    done
+
+    # Show cursor and reset trap
+    printf '\033[?25h'
+    trap - INT
+
+    # Save selections to INSTALL_OPTIONAL
+    local index=0
+    for key in "${keys[@]}"; do
+        if [[ ${selected[$index]} -eq 1 ]]; then
+            INSTALL_OPTIONAL[$key]="yes"
+        fi
+        ((++index))
+    done
+
+    echo ""
+}
+
+# Get unique categories from loaded apps (preserves order of first appearance)
+# Populates the global UNIQUE_CATEGORIES array
+declare -a UNIQUE_CATEGORIES
+get_unique_categories() {
+    UNIQUE_CATEGORIES=()
+    local -a seen=()
+
+    for key in "${APP_ORDER[@]}"; do
+        local cat="${APP_CATEGORIES[$key]}"
+        local found=0
+
+        for s in "${seen[@]}"; do
+            if [[ "$s" == "$cat" ]]; then
+                found=1
+                break
+            fi
+        done
+
+        if [[ $found -eq 0 ]]; then
+            seen+=("$cat")
+            UNIQUE_CATEGORIES+=("$cat")
+        fi
+    done
+}
+
+# Convert category key to display name (e.g., "filemanager" -> "File Manager")
+category_to_display_name() {
+    local category="$1"
+    case "$category" in
+        filemanager)   echo "File Manager" ;;
+        development)   echo "Development Tools" ;;
+        monitoring)    echo "System Monitoring" ;;
+        hardware)      echo "Hardware Control" ;;
+        customization) echo "System Customization" ;;
+        personal)      echo "Personal Applications" ;;
+        *)             echo "$category" ;;  # Fallback: use as-is
+    esac
 }
 
 display_essential_packages() {
@@ -403,26 +513,52 @@ prompt_optional_packages() {
     echo ""
     log_info "Optional Package Selection"
     echo "================================================================"
-    echo "Select which optional packages you want to install."
-    echo ""
 
-    # File Manager
-    prompt_category_selection "filemanager" "File Manager" "all"
+    # Get unique categories dynamically from the config
+    get_unique_categories
 
-    # Development Tools
-    prompt_category_selection "development" "Development Tools" "all"
+    # In dry-run mode, show all packages without interactive menu
+    if [[ "$DRY_RUN" == "true" ]]; then
+        echo "All optional packages would be available for selection:"
+        echo ""
 
-    # System Monitoring
-    prompt_category_selection "monitoring" "System Monitoring" "all"
+        for category in "${UNIQUE_CATEGORIES[@]}"; do
+            local display_name
+            display_name=$(category_to_display_name "$category")
+            echo -e "${BLUE}${display_name}:${NC}"
 
-    # Hardware Control
-    prompt_category_selection "hardware" "Hardware Control" "all"
+            for key in "${APP_ORDER[@]}"; do
+                if [[ "${APP_CATEGORIES[$key]}" == "$category" ]]; then
+                    local name="${APP_NAMES[$key]}"
+                    local description="${APP_DESCRIPTIONS[$key]}"
+                    local repo="${APP_REPOS[$key]}"
 
-    # System Customization
-    prompt_category_selection "customization" "System Customization" "all"
+                    if [[ -n "$description" ]]; then
+                        echo "    [x] $name - $description [$repo]"
+                    else
+                        echo "    [x] $name [$repo]"
+                    fi
 
-    # Personal Applications
-    prompt_category_selection "personal" "Personal Applications" "none"
+                    # Mark all as selected for dry-run
+                    INSTALL_OPTIONAL[$key]="yes"
+                fi
+            done
+            echo ""
+        done
+
+        log_info "Dry-run: All optional packages selected"
+        return
+    fi
+
+    echo "For each category, select packages to install."
+    echo "All packages are selected by default."
+
+    # Loop through each category
+    for category in "${UNIQUE_CATEGORIES[@]}"; do
+        local display_name
+        display_name=$(category_to_display_name "$category")
+        multiselect_menu "$display_name" "$category"
+    done
 
     echo ""
     log_info "Selection complete!"
