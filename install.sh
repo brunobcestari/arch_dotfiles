@@ -1070,6 +1070,7 @@ main() {
     backup_existing_configs
     install_packages
     create_config_directories
+    configure_displays
     copy_configuration_files
     install_greetd_config
     install_backgrounds
@@ -1077,8 +1078,6 @@ main() {
     setup_custom_ps1
     enable_services
 
-    # Configure displays (after all configs are copied)
-    configure_displays
 
     # Show summary
     show_summary
