@@ -462,20 +462,6 @@ get_unique_categories() {
     done
 }
 
-# Convert category key to display name (e.g., "filemanager" -> "File Manager")
-category_to_display_name() {
-    local category="$1"
-    case "$category" in
-        filemanager)   echo "File Manager" ;;
-        development)   echo "Development Tools" ;;
-        monitoring)    echo "System Monitoring" ;;
-        hardware)      echo "Hardware Control" ;;
-        customization) echo "System Customization" ;;
-        personal)      echo "Personal Applications" ;;
-        *)             echo "$category" ;;  # Fallback: use as-is
-    esac
-}
-
 display_essential_packages() {
     local packages_file="$SCRIPT_DIR/packages.txt"
 
@@ -524,7 +510,7 @@ prompt_optional_packages() {
 
         for category in "${UNIQUE_CATEGORIES[@]}"; do
             local display_name
-            display_name=$(category_to_display_name "$category")
+            display_name=$category
             echo -e "${BLUE}${display_name}:${NC}"
 
             for key in "${APP_ORDER[@]}"; do
@@ -556,7 +542,7 @@ prompt_optional_packages() {
     # Loop through each category
     for category in "${UNIQUE_CATEGORIES[@]}"; do
         local display_name
-        display_name=$(category_to_display_name "$category")
+        display_name=$category
         multiselect_menu "$display_name" "$category"
     done
 
