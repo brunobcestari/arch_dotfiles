@@ -81,9 +81,8 @@ DESCRIPTION:
     - Prompt for optional package categories from optional-apps.conf
     - Show installation summary before proceeding
     - Backup existing configurations
-    - Install selected packages
+    - Install selected packages with paru
     - Copy configuration files
-    - Generate custom autostart.conf based on selections
     - Set up services and system integration
 
 CONFIGURATION FILES:
@@ -136,16 +135,16 @@ prompt_yes_no() {
     local prompt="$1"
     local default="${2:-n}"
     local answer
-    
+
     if [[ "$default" == "y" ]]; then
         prompt="$prompt [Y/n]: "
     else
         prompt="$prompt [y/N]: "
     fi
-    
+
     read -r -p "$prompt" answer
     answer="${answer:-$default}"
-    
+
     [[ "$answer" =~ ^[Yy]$ ]]
 }
 
@@ -176,41 +175,41 @@ cleanup() {
 
 install_paru() {
     log_info "Installing paru AUR helper..."
-    
+
     # Check for required dependencies
     if ! command -v git &> /dev/null || ! command -v make &> /dev/null; then
         log_info "Installing base-devel and git..."
         sudo pacman -S --needed --noconfirm base-devel git
     fi
-    
+
     # Clone and build paru
     local temp_dir
     temp_dir=$(mktemp -d)
     cd "$temp_dir" || exit 1
-    
+
     log_info "Downloading paru from AUR..."
     git clone https://aur.archlinux.org/paru.git
     cd paru || exit 1
-    
+
     log_info "Building and installing paru..."
     makepkg -si --noconfirm
-    
+
     # Cleanup
     cd "$HOME" || exit 1
     rm -rf "$temp_dir"
-    
+
     log_success "paru installed successfully"
 }
 
 check_requirements() {
     log_info "Checking system requirements..."
-    
+
     # Check if running on Arch
     if ! command -v pacman &> /dev/null; then
         log_error "This script is for Arch Linux only"
         exit 1
     fi
-    
+
     # Check if paru is installed
     if ! command -v paru &> /dev/null; then
         log_warning "paru AUR helper is not installed"
@@ -222,7 +221,7 @@ check_requirements() {
             exit 1
         fi
     fi
-    
+
     log_success "System requirements met"
 }
 
@@ -235,9 +234,9 @@ verify_source_structure() {
     local essential_files=(
         "$SCRIPT_DIR/packages.txt"
         "$SCRIPT_DIR/optional-apps.conf"
-        "$SCRIPT_DIR/hypr/autostart.conf.tpl"
         "$SCRIPT_DIR/greetd/config.toml"
         "$SCRIPT_DIR/ps1/custom_ps1.sh"
+        "$SCRIPT_DIR/backgrounds"
     )
 
     for item in "${essential_files[@]}"; do
@@ -289,8 +288,6 @@ declare -A APP_CATEGORIES
 declare -A APP_NAMES
 declare -A APP_DESCRIPTIONS
 declare -A APP_REPOS
-declare -A APP_AUTOSTART
-declare -A APP_STARTUP_CMDS
 declare -a APP_ORDER
 
 load_optional_apps() {
@@ -301,7 +298,7 @@ load_optional_apps() {
         exit 1
     fi
 
-    while IFS='|' read -r category name description repo autostart startup_cmd; do
+    while IFS='|' read -r category name description repo; do
         # Skip comments and empty lines
         [[ "$category" =~ ^#.*$ ]] && continue
         [[ -z "$category" ]] && continue
@@ -311,8 +308,6 @@ load_optional_apps() {
         APP_NAMES[$key]="$name"
         APP_DESCRIPTIONS[$key]="$description"
         APP_REPOS[$key]="$repo"
-        APP_AUTOSTART[$key]="$autostart"
-        APP_STARTUP_CMDS[$key]="$startup_cmd"
         APP_ORDER+=("$key")
     done < "$config_file"
 }
@@ -340,7 +335,6 @@ prompt_category_selection() {
     local category="$1"
     local category_display="$2"
     local default_install="$3"
-    local is_personal="${4:-no}"
 
     # Get all apps in this category
     local apps=()
@@ -360,12 +354,6 @@ prompt_category_selection() {
     echo ""
     echo -e "${BLUE}$category_display:${NC}"
     display_category_packages "$category"
-
-    if [[ "$is_personal" == "yes" ]]; then
-        echo ""
-        log_warning "These are personal/productivity apps from AUR"
-        log_warning "They will be installed and added to autostart if confirmed"
-    fi
 
     echo ""
     local default_answer="y"
@@ -419,22 +407,22 @@ prompt_optional_packages() {
     echo ""
 
     # File Manager
-    prompt_category_selection "filemanager" "File Manager" "all" "no"
+    prompt_category_selection "filemanager" "File Manager" "all"
 
     # Development Tools
-    prompt_category_selection "development" "Development Tools" "all" "no"
+    prompt_category_selection "development" "Development Tools" "all"
 
     # System Monitoring
-    prompt_category_selection "monitoring" "System Monitoring" "all" "no"
+    prompt_category_selection "monitoring" "System Monitoring" "all"
 
     # Hardware Control
-    prompt_category_selection "hardware" "Hardware Control" "all" "no"
+    prompt_category_selection "hardware" "Hardware Control" "all"
 
     # System Customization
-    prompt_category_selection "customization" "System Customization" "all" "no"
+    prompt_category_selection "customization" "System Customization" "all"
 
     # Personal Applications
-    prompt_category_selection "personal" "Personal Applications (Startup Apps)" "none" "yes"
+    prompt_category_selection "personal" "Personal Applications" "none"
 
     echo ""
     log_info "Selection complete!"
@@ -560,7 +548,7 @@ backup_existing_configs() {
             break
         fi
     done
-    
+
     if [[ "$needs_backup" == "true" ]]; then
         if [[ "$DRY_RUN" == "false" ]]; then
             if ! prompt_yes_no "Existing configurations found. Create backup?" "y"; then
@@ -667,68 +655,6 @@ copy_configuration_files() {
     log_success "Configuration files copied"
 }
 
-generate_autostart_config() {
-    log_info "Generating autostart configuration..."
-
-    local autostart_file="$CONFIG_HOME/hypr/autostart.conf"
-    local autostart_template="$SCRIPT_DIR/hypr/autostart.conf.tpl"
-
-    # Verify template exists
-    if [[ ! -f "$autostart_template" ]]; then
-        log_error "Autostart template not found: $autostart_template"
-        exit 1
-    fi
-
-    if [[ "$DRY_RUN" == "true" ]]; then
-        echo -e "${YELLOW}[DRY-RUN]${NC} Would copy: $autostart_template -> $autostart_file"
-        # Show what autostart entries would be added
-        for key in "${APP_ORDER[@]}"; do
-            if [[ "${INSTALL_OPTIONAL[$key]:-}" == "yes" ]] && [[ "${APP_AUTOSTART[$key]}" == "yes" ]]; then
-                local name="${APP_NAMES[$key]}"
-                local startup_cmd="${APP_STARTUP_CMDS[$key]}"
-                echo -e "${YELLOW}[DRY-RUN]${NC} Would add autostart: $name ($startup_cmd)"
-            fi
-        done
-        log_success "Autostart configuration generated"
-        return
-    fi
-
-    # Copy base configuration from template
-    cp "$autostart_template" "$autostart_file"
-
-    # Add applications based on user selection
-    local has_personal_apps=false
-
-    for key in "${APP_ORDER[@]}"; do
-        if [[ "${INSTALL_OPTIONAL[$key]:-}" == "yes" ]]; then
-            local autostart="${APP_AUTOSTART[$key]}"
-
-            if [[ "$autostart" == "yes" ]]; then
-                local name="${APP_NAMES[$key]}"
-                local startup_cmd="${APP_STARTUP_CMDS[$key]}"
-                local description="${APP_DESCRIPTIONS[$key]}"
-
-                # Add comment with description
-                if [[ -n "$description" ]]; then
-                    echo "# $description" >> "$autostart_file"
-                else
-                    echo "# $name" >> "$autostart_file"
-                fi
-
-                # Add startup command
-                echo "exec-once = $startup_cmd" >> "$autostart_file"
-                has_personal_apps=true
-            fi
-        fi
-    done
-
-    if [[ "$has_personal_apps" == "true" ]]; then
-        echo "" >> "$autostart_file"
-    fi
-
-    log_success "Autostart configuration generated"
-}
-
 install_greetd_config() {
     log_info "Installing greetd display manager config (requires sudo)..."
 
@@ -755,6 +681,32 @@ install_greetd_config() {
     sudo cp $SCRIPT_DIR/greetd/* /etc/greetd/
 
     log_success "greetd config installed"
+}
+
+install_backgrounds() {
+    log_info "Installing background images (requires sudo)..."
+
+    local backgrounds_path="$SCRIPT_DIR/backgrounds"
+
+    if [[ ! -d "$backgrounds_path" ]]; then
+        log_warning "Backgrounds directory not found, skipping"
+        return
+    fi
+
+    if [[ "$DRY_RUN" == "true" ]]; then
+        echo -e "${YELLOW}[DRY-RUN]${NC} Would run: sudo cp $backgrounds_path/* /usr/share/backgrounds/"
+        return
+    fi
+
+    if ! sudo -v; then
+        log_error "sudo access required for backgrounds installation"
+        exit 1
+    fi
+
+    sudo mkdir -p /usr/share/backgrounds
+    sudo cp "$backgrounds_path"/* /usr/share/backgrounds/
+
+    log_success "Background images installed"
 }
 
 setup_vim() {
@@ -827,8 +779,17 @@ enable_services() {
     log_info "Enabling services..."
 
     if [[ "$DRY_RUN" == "true" ]]; then
+        echo -e "${YELLOW}[DRY-RUN]${NC} Would disable any existing display manager"
         echo -e "${YELLOW}[DRY-RUN]${NC} Would run: sudo systemctl enable greetd.service"
         return
+    fi
+
+    # Disable any existing display manager first
+    if [[ -L /etc/systemd/system/display-manager.service ]]; then
+        local current_dm
+        current_dm=$(readlink /etc/systemd/system/display-manager.service | xargs basename)
+        log_info "Disabling existing display manager: $current_dm"
+        sudo systemctl disable "$current_dm" 2>/dev/null || true
     fi
 
     # Enable greetd (it manages its own VT via config.toml)
@@ -854,25 +815,24 @@ show_summary() {
     echo "What's installed:"
     echo "  ✓ Hyprland with Waybar, Mako, Hyprlock"
     echo "  ✓ Alacritty terminal with Tokyo Night theme"
-    
+
     # Check if vim is installed
     if is_package_selected "vim"; then
         echo "  ✓ Vim with NERDTree, coc.nvim, and colorschemes"
     fi
-    
+
     echo "  ✓ Custom colorful bash prompt with git branch"
     echo "  ✓ PipeWire audio with GTK device selector popups"
     echo "  ✓ Weather widget with interactive forecast popup"
-    
+
     # List other installed optional packages
     for key in "${APP_ORDER[@]}"; do
         if [[ "${INSTALL_OPTIONAL[$key]:-}" == "yes" ]]; then
             local name="${APP_NAMES[$key]}"
             local description="${APP_DESCRIPTIONS[$key]}"
-            local category="${APP_CATEGORIES[$key]}"
-            
-            # Skip vim (already shown above) and personal apps
-            if [[ "$name" != "vim" ]] && [[ "$category" != "personal" ]]; then
+
+            # Skip vim (already shown above)
+            if [[ "$name" != "vim" ]]; then
                 if [[ -n "$description" ]]; then
                     echo "  ✓ $description"
                 else
@@ -881,26 +841,7 @@ show_summary() {
             fi
         fi
     done
-    
-    # Show personal apps with autostart
-    local has_autostart=false
-    for key in "${APP_ORDER[@]}"; do
-        if [[ "${INSTALL_OPTIONAL[$key]:-}" == "yes" ]] && [[ "${APP_AUTOSTART[$key]}" == "yes" ]]; then
-            if [[ "$has_autostart" == "false" ]]; then
-                echo ""
-                echo "Autostart apps:"
-                has_autostart=true
-            fi
-            local description="${APP_DESCRIPTIONS[$key]}"
-            local name="${APP_NAMES[$key]}"
-            if [[ -n "$description" ]]; then
-                echo "  ✓ $description"
-            else
-                echo "  ✓ $name"
-            fi
-        fi
-    done
-    
+
     echo ""
     echo "Keybindings:"
     echo "  Super+Return    - Terminal"
@@ -909,7 +850,7 @@ show_summary() {
     echo "  Super+Shift+Q   - Close window"
     echo "  Super+Shift+E   - Exit Hyprland"
     echo ""
-    
+
     if [[ -n "${BACKUP_DIR:-}" ]] && [[ -d "$BACKUP_DIR" ]]; then
         echo "Backup location: $BACKUP_DIR"
         echo ""
@@ -978,8 +919,8 @@ main() {
     install_packages
     create_config_directories
     copy_configuration_files
-    generate_autostart_config
     install_greetd_config
+    install_backgrounds
     setup_vim
     setup_custom_ps1
     enable_services

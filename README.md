@@ -2,22 +2,23 @@
 
 Personal dotfiles for Arch Linux with Hyprland window manager.
 
-**Now with modular architecture, dry-run mode, and easy maintenance!**
+**Features modular architecture, UWSM session management, and easy maintenance!**
 
-## 📖 Table of Contents
+## Table of Contents
 - [Features](#-features)
 - [Installation](#-installation)
-- [Installer Features](#-installer-features) - **NEW: Dry-run & custom backups**
-- [Maintenance Guide](#-maintenance-guide) - **How to add new dotfiles**
+- [Installer Features](#-installer-features)
+- [Maintenance Guide](#-maintenance-guide)
 - [Keybindings](#-keybindings)
 - [Customization](#-customization)
 - [Directory Structure](#-directory-structure)
 - [Troubleshooting](#-troubleshooting)
 
-## 🎨 Features
+## Features
 
 - **Window Manager**: Hyprland (Wayland compositor)
-- **Display Manager**: SDDM with HiDPI support
+- **Session Manager**: UWSM (Universal Wayland Session Manager)
+- **Display Manager**: greetd with ReGreet (GTK4 greeter)
 - **Status Bar**: Dual Waybar setup (top + bottom) with modular config, grouped modules, and GTK popups
 - **Terminal**: Alacritty with Tokyo Night theme
 - **Notifications**: Mako
@@ -29,16 +30,16 @@ Personal dotfiles for Arch Linux with Hyprland window manager.
 - **Editor**: Vim with NERDTree, coc.nvim, and colorschemes
 - **Shell**: Custom colorful PS1 bash prompt with git branch info
 
-## 🖥️ System Configuration
+## System Configuration
 
 ### Display Setup
 - **Primary Monitor (DP-1)**: 3840x2160@60Hz (4K, HiDPI 2x scaling)
-- **Secondary Monitor (DP-2)**: Disabled during login, available after login
-- SDDM shows only on primary monitor with proper HiDPI scaling
+- **Secondary Monitor (DP-2)**: Available after login
+- ReGreet shows on primary monitor with proper scaling
 
 ### Keyboard Layout
 - US International (with dead keys for accents)
-- Configured in both Hyprland and SDDM
+- Configured in Hyprland
 
 ### Audio
 - Multiple input/output device support
@@ -47,7 +48,7 @@ Personal dotfiles for Arch Linux with Hyprland window manager.
 - GTK popup device selector (click microphone/speaker icons)
 - Real-time device switching with visual feedback
 
-## 📦 Installation
+## Installation
 
 ### Prerequisites
 
@@ -74,17 +75,19 @@ cd ~/gitrepos/arch_dotfiles
    ```
 4. Show installation summary before proceeding
 5. Backup existing configurations automatically
-6. Install selected packages
-7. Generate custom `autostart.conf` based on your selections
-8. Set up all configurations and enable services
+6. Install selected packages with paru
+7. Copy all configuration files
+8. Install greetd config and login background
+9. Disable any existing display manager and enable greetd
+10. Set up all configurations and enable services
 
 **Available optional categories:**
 - **File Manager**: Thunar
-- **Development Tools**: Vim, Node.js, npm, git
+- **Development Tools**: Vim, Node.js, npm, git, Waydroid, Podman, Podman Desktop
 - **System Monitoring**: btop
 - **Hardware Control**: brightnessctl, playerctl, OpenLinkHub (Corsair), razercfg (Razer)
-- **System Customization**: SDDM Silent Theme
-- **Personal Applications**: ProtonMail Bridge, Proton Mail, Proton Pass, pCloud Drive, Das Keyboard Q, Birdtray *(AUR, will autostart)*
+- **System Customization**: workstyle-git (workspace icons)
+- **Personal Applications**: ProtonMail Bridge, Proton Mail, Proton Pass, pCloud Drive, Das Keyboard Q, Thunderbird, Birdtray
 
 ### Configuration Files
 
@@ -95,21 +98,24 @@ Package installation is controlled by two config files:
 hyprland
 waybar
 alacritty
+uwsm
+greetd
+greetd-regreet
 # ... etc
 ```
 
 **optional-apps.conf** - Optional packages grouped by category:
 ```
-# Format: category|name|description|repo|autostart|startup_command
-filemanager|thunar|Thunar file manager|official|no|
-development|vim|Vim text editor with plugins|official|no|
-personal|protonmail-bridge|ProtonMail Bridge|aur|yes|protonmail-bridge
+# Format: category|name|description|repo
+filemanager|thunar|Thunar file manager|official
+development|vim|Vim text editor with plugins|official
+personal|protonmail-bridge|ProtonMail Bridge for email clients|aur
 ```
 
 This makes it easy to:
 - Add/remove packages by editing config files
-- Specify package source (official repos or AUR)
-- Control which apps autostart on login
+- See package source (official repos or AUR) for reference
+- Use XDG autostart for apps that should start on login
 - Maintain consistent setup across installations
 
 ### Manual Install
@@ -128,21 +134,28 @@ If you prefer manual control, you can install components individually:
    cp -r mako ~/.config/
    cp -r alacritty ~/.config/
    cp -r rofi ~/.config/
+   cp -r uwsm ~/.config/
    ```
 
-3. **Install SDDM configs** (requires sudo):
+3. **Install greetd configs** (requires sudo):
    ```bash
-   sudo cp sddm/*.conf /etc/sddm.conf.d/
-   sudo cp sddm/Xsetup /usr/share/sddm/scripts/Xsetup
-   sudo chmod +x /usr/share/sddm/scripts/Xsetup
+   sudo cp greetd/* /etc/greetd/
    ```
 
-4. **Enable SDDM**:
+4. **Install backgrounds** (requires sudo):
    ```bash
-   sudo systemctl enable sddm.service
+   sudo mkdir -p /usr/share/backgrounds
+   sudo cp backgrounds/* /usr/share/backgrounds/
    ```
 
-5. **Reboot** and select Hyprland from SDDM
+5. **Enable greetd**:
+   ```bash
+   # Disable any existing display manager first
+   sudo systemctl disable sddm.service  # or gdm, lightdm, etc.
+   sudo systemctl enable greetd.service
+   ```
+
+6. **Reboot** and select "Hyprland (uwsm)" from ReGreet
 
 ### Syncing Changes Back to Repo
 
@@ -155,13 +168,14 @@ After making changes to your configs, use the sync script to backup to the repo:
 **The sync script will:**
 1. Copy all configs from `~/.config` back to the repo
 2. Copy `.vimrc` and `custom_ps1.sh` back to the repo
-3. Optionally sync SDDM configs (requires sudo)
-4. Show git diff of changes
-5. Optionally commit and push changes
+3. Optionally sync greetd configs (requires sudo)
+4. Optionally sync backgrounds (requires sudo)
+5. Show git diff of changes
+6. Optionally commit and push changes
 
 This makes it easy to keep your dotfiles repo in sync with your actual system configs!
 
-## 🎯 Installer Features
+## Installer Features
 
 ### Core Features
 - **Config-driven**: All packages defined in `packages.txt` and `optional-apps.conf`
@@ -171,7 +185,7 @@ This makes it easy to keep your dotfiles repo in sync with your actual system co
 - **Clear display**: Shows what will be installed with repository sources
 - **Installation summary**: Review package counts before proceeding
 - **Automatic backups**: Creates timestamped backups before overwriting configs
-- **Dynamic autostart**: Generates `autostart.conf` based on your selections
+- **Display manager handling**: Automatically disables existing display managers before enabling greetd
 - **Error handling**: Robust error handling with `set -euo pipefail`
 - **Colored output**: Clear status messages for better readability
 - **Safe operations**: Confirmation prompts before destructive operations
@@ -212,11 +226,11 @@ The `--dry-run` flag lets you preview exactly what the installer will do without
 ```
 
 **What it shows:**
-- ✓ All packages that would be installed
-- ✓ All directories that would be created
-- ✓ All files that would be copied
-- ✓ All commands that would run (including sudo commands)
-- ✓ Backup locations and what would be backed up
+- All packages that would be installed
+- All directories that would be created
+- All files that would be copied
+- All commands that would run (including sudo commands)
+- Backup locations and what would be backed up
 
 **Perfect for:**
 - Testing the installer before running it
@@ -224,7 +238,7 @@ The `--dry-run` flag lets you preview exactly what the installer will do without
 - Understanding what will happen on a fresh install
 - Debugging installation issues
 
-## ⌨️ Keybindings
+## Keybindings
 
 | Key | Action |
 |-----|--------|
@@ -245,7 +259,7 @@ The `--dry-run` flag lets you preview exactly what the installer will do without
 - `XF86AudioMute` - Mute toggle
 - `XF86AudioPlay/Pause` - Media control
 
-## 🎨 Customization
+## Customization
 
 ### Hyprland
 
@@ -255,36 +269,35 @@ The Hyprland configuration is organized into separate files for better maintaina
 - **hyprland.conf** - Main config that sources all modules
 - **monitors.conf** - Display and monitor setup
 - **programs.conf** - Default applications ($terminal, $fileManager, etc.)
-- **autostart.conf** - Startup applications (dynamically generated by installer based on your selections)
+- **autostart.conf** - Startup applications (uses `uwsm app --` for systemd integration)
 - **environment.conf** - Environment variables (cursor size, Electron flags, etc.)
 - **look-and-feel.conf** - Appearance, decorations, animations, layouts
 - **input.conf** - Keyboard layout, mouse settings, touchpad, gestures
 - **keybindings.conf** - All keyboard shortcuts and binds
 - **rules.conf** - Window rules and workspace rules
 
-**Benefits:**
-- 📝 Easy to share core config without personal apps
-- 🔧 Modify sections independently
-- 📚 Clear organization and documentation
-- 🎯 Installer generates `autostart.conf` with only the apps you selected
-- ⚠️ No need to worry about missing dependencies - only selected apps are included
+**UWSM Integration:**
+Apps in autostart.conf use `uwsm app --` prefix to run as systemd user units, providing better process management and logging.
+
+**XDG Autostart:**
+Personal apps that need to start on login can use XDG desktop files in `~/.config/autostart/` instead of being added to autostart.conf.
 
 ### Waybar
 
 **Dual Bar Setup:**
 Two separate Waybar instances for better organization:
 
-- **Top Bar** (`config-top.jsonc`):
+- **Top Bar** (`config-top.jsonc.tpl`):
   - Left: Window title
   - Center: Clock, Weather widget
   - Right: Updates, VPN, System monitors (CPU, Memory, Disk), Network
 
-- **Bottom Bar** (`config-bottom.jsonc`):
+- **Bottom Bar** (`config-bottom.jsonc.tpl`):
   - Left: Hyprland workspaces
   - Right: Media player, Audio controls (input/output/slider), System tray, Power menu
 
 **Modular Configuration Structure:**
-The Waybar configuration uses a modular approach inspired by the HyDE project, with modules organized into separate JSON files and grouped for better organization:
+The Waybar configuration uses a modular approach with modules organized into separate JSON files and grouped for better organization:
 
 - **Module Groups**:
   - `group/system` - CPU, memory, disk monitoring
@@ -297,7 +310,7 @@ The Waybar configuration uses a modular approach inspired by the HyDE project, w
 **Interactive Features:**
 - **Audio Input/Output Selector**: Click microphone/speaker icons to open GTK device selector
   - Shows all available audio devices
-  - Checkmark (✓) and bold text indicate current device
+  - Checkmark and bold text indicate current device
   - Single-click to switch devices
   - Auto-closes after selection
 - **Weather Forecast**: Click weather widget to see detailed forecast
@@ -309,6 +322,13 @@ The Waybar configuration uses a modular approach inspired by the HyDE project, w
   - Middle-click volume icon to mute/unmute
   - Scroll on volume icon to adjust volume
 - Custom Catppuccin styling in `waybar/style.css`
+
+### ReGreet (Login Screen)
+
+- **Theme**: Dark GTK theme matching system
+- **Background**: Custom wallpaper from `backgrounds/` folder
+- **Font**: JetBrainsMono Nerd Font
+- **Config**: `greetd/regreet.toml` and `greetd/regreet.css`
 
 ### Alacritty
 - Tokyo Night color scheme
@@ -324,7 +344,7 @@ The Waybar configuration uses a modular approach inspired by the HyDE project, w
 
 ### Rofi
 - **Application Launcher**: Shows desktop applications by default
-- **Mode Switching**: Cycle through modes with Ctrl+Tab (Applications → Windows → Run → SSH)
+- **Mode Switching**: Cycle through modes with Ctrl+Tab (Applications -> Windows -> Run -> SSH)
 - **Custom Theme**: Catppuccin-inspired design matching Waybar
   - Same dark background (#1A1B26) and cyan accent (#33ccff)
   - Rounded corners and clean spacing
@@ -346,49 +366,45 @@ The Waybar configuration uses a modular approach inspired by the HyDE project, w
 - **Location**: `/etc/profile.d/custom_ps1.sh` (system-wide)
 - Config: `ps1/custom_ps1.sh`
 
-## 📁 Directory Structure
+## Directory Structure
 
 ```
 arch_dotfiles/
 ├── hypr/                  # Hyprland & Hyprlock configs
+│   ├── hyprland.conf      # Main config (sources modules)
+│   ├── autostart.conf     # Startup apps (uwsm integration)
+│   ├── monitors.conf      # Display setup
+│   └── ...                # Other modular configs
 ├── waybar/                # Dual Waybar setup (modular structure)
-│   ├── config-top.jsonc   # Top bar configuration
-│   ├── config-bottom.jsonc # Bottom bar configuration
+│   ├── config-top.jsonc.tpl    # Top bar configuration
+│   ├── config-bottom.jsonc.tpl # Bottom bar configuration
 │   ├── style.css          # Catppuccin styling
 │   ├── modules/           # Modular JSON configs
-│   │   ├── workspaces.json      # Hyprland workspaces & windows
-│   │   ├── clock.json           # Clock with calendar
-│   │   ├── system.json          # CPU, memory, disk
-│   │   ├── audio.json           # Audio input/output/slider
-│   │   ├── network.json         # Network status
-│   │   ├── media.json           # Media player controls
-│   │   ├── custom-modules.json  # Weather, VPN, updates, mail
-│   │   ├── power.json           # Power menu
-│   │   └── tray.json            # System tray
 │   ├── menus/             # XML menu definitions
-│   │   └── power.xml            # Power menu options
 │   └── scripts/           # Python & bash scripts
-│       ├── audio-selector.py    # GTK audio device selector
-│       ├── weather-popup.py     # GTK weather forecast popup
-│       ├── thunderbird-mail.sh  # Email notification checker
-│       ├── vpn-status.sh        # VPN status indicator
-│       └── updates.sh           # System update checker
 ├── mako/                  # Notification daemon
 ├── alacritty/             # Terminal emulator
 ├── rofi/                  # Application launcher
-├── sddm/                  # Display manager configs
+├── greetd/                # Display manager configs
+│   ├── config.toml        # greetd main config
+│   ├── regreet.toml       # ReGreet greeter config
+│   ├── regreet.css        # ReGreet styling
+│   └── hyprland.conf      # Hyprland config for greeter
+├── uwsm/                  # UWSM session manager
+│   └── env                # Environment variables
+├── backgrounds/           # Login screen backgrounds
 ├── xdg-desktop-portal/    # Portal config for screen sharing
 ├── vim/                   # Vim configuration & plugins
 ├── ps1/                   # Custom bash prompt
 ├── workstyle/             # Workstyle config (workspace icons)
 ├── packages.txt           # Essential packages (always installed)
-├── optional-apps.conf     # Optional packages with categories & autostart
-├── install.sh             # Modular installation script with config arrays
+├── optional-apps.conf     # Optional packages with categories
+├── install.sh             # Modular installation script
 ├── sync-from-system.sh    # Sync system configs back to repo
 └── README.md              # This file
 ```
 
-## 🎥 Screen Sharing
+## Screen Sharing
 
 Screen sharing works with apps like Slack, Discord, Zoom, etc.
 
@@ -403,11 +419,11 @@ Screen sharing works with apps like Slack, Discord, Zoom, etc.
 **Environment Variables:**
 The Hyprland config includes `ELECTRON_OZONE_PLATFORM_HINT=wayland` for better Electron app support.
 
-## 🔧 Maintenance Guide
+## Maintenance Guide
 
 ### Adding New Dotfiles
 
-The installer uses **centralized configuration arrays** at the top of `install.sh` (lines 19-43). This makes adding new dotfiles super easy!
+The installer uses **centralized configuration arrays** at the top of `install.sh`. This makes adding new dotfiles super easy!
 
 #### 1. Add a Standard Config Directory (goes to `~/.config/`)
 
@@ -428,10 +444,10 @@ mkdir ~/gitrepos/arch_dotfiles/neovim
 ```
 
 **That's it!** The installer will automatically:
-- ✓ Verify the directory exists before installation
-- ✓ Create `~/.config/neovim` directory
-- ✓ Copy all files from `neovim/` to `~/.config/neovim/`
-- ✓ Include it in backups
+- Verify the directory exists before installation
+- Create `~/.config/neovim` directory
+- Copy all files from `neovim/` to `~/.config/neovim/`
+- Include it in backups
 
 #### 2. Add a Home Directory File (goes to `~/`)
 
@@ -486,18 +502,33 @@ kitty           # <- Add here
 Edit `optional-apps.conf`:
 
 ```
-# Format: category|name|description|repo|autostart|startup_command
-development|neovim|Neovim text editor|official|no|
-personal|spotify|Spotify music player|aur|yes|spotify
+# Format: category|name|description|repo
+development|neovim|Neovim text editor|official
+personal|spotify|Spotify music player|aur
 ```
 
 **Fields explained:**
 - `category` - Group name (development, personal, etc.)
 - `name` - Package name (must match the actual package)
 - `description` - Human-readable description
-- `repo` - Either `official` or `aur`
-- `autostart` - `yes` to add to autostart, `no` otherwise
-- `startup_command` - Command to run on startup (empty if autostart=no)
+- `repo` - Either `official` or `aur` (for reference only, paru handles both)
+
+### Adding Backgrounds
+
+Add new background images to the `backgrounds/` folder:
+
+```bash
+cp ~/Pictures/my-wallpaper.png ~/gitrepos/arch_dotfiles/backgrounds/
+```
+
+Update `greetd/regreet.toml` to use the new background:
+
+```toml
+[background]
+path = "/usr/share/backgrounds/my-wallpaper.png"
+```
+
+The installer will copy all backgrounds to `/usr/share/backgrounds/`.
 
 ### Testing Your Changes
 
@@ -509,19 +540,16 @@ Always test with dry-run first:
 
 This shows exactly what would be installed/copied without making any changes!
 
-### Best Practices
 
-1. **Keep it simple** - Don't add configs you don't use
-2. **Test with dry-run** - Always preview changes before installing
-3. **Document changes** - Update this README when adding major configs
-4. **Use sync script** - Keep repo in sync with `./sync-from-system.sh`
-5. **Commit regularly** - Small, focused commits are easier to track
+## Troubleshooting
 
-## 🔧 Troubleshooting
-
-### USB Input Devices Not Working on Login
-- This is why we use SDDM instead of LightDM
-- SDDM properly initializes USB devices on Wayland
+### Display Manager Conflicts
+If greetd fails to enable due to an existing display manager:
+```bash
+# The installer handles this automatically, but if needed manually:
+sudo systemctl disable sddm.service  # or gdm, lightdm, etc.
+sudo systemctl enable greetd.service
+```
 
 ### Volume Wheel Not Working
 - Ensure PipeWire and WirePlumber are running
@@ -532,36 +560,31 @@ This shows exactly what would be installed/copied without making any changes!
 - Check that scripts are executable: `chmod +x ~/.config/waybar/scripts/*.py`
 - GTK Layer Shell provides proper Wayland positioning but gracefully falls back if unavailable
 
-### HiDPI Issues
-- SDDM Xsetup script sets DPI to 192 (2x scaling)
-- Waybar and Hyprland inherit proper scaling
+### UWSM Issues
+- Check UWSM logs: `journalctl --user -u uwsm-*`
+- Ensure `uwsm` package is installed
+- Environment variables are set in `~/.config/uwsm/env`
 
-## 📝 Notes
+### ReGreet Not Showing Background
+- Ensure the background file exists at the path specified in `regreet.toml`
+- Check that the path is absolute (e.g., `/usr/share/backgrounds/...`)
+- Verify file permissions: `ls -la /usr/share/backgrounds/`
+
+## Notes
 
 - Configured for Brazilian user (US International keyboard for accents)
 - Multiple audio devices supported (gaming headsets, USB mics, etc.)
 - HiDPI aware (4K primary display)
 - Dual monitor setup optimized
 
-## 🙏 Credits
+## Credits
 
 - [Hyprland](https://hyprland.org/)
 - [Waybar](https://github.com/Alexays/Waybar)
+- [UWSM](https://github.com/Vladimir-csp/uwsm)
+- [greetd](https://git.sr.ht/~kennylevinsen/greetd) & [ReGreet](https://github.com/rharish101/ReGreet)
 - Configured with assistance from Claude Code
 
 ---
 
 **Author**: Bruno
-**Last Updated**: December 29, 2024
-
-## 📋 Recent Updates
-
-### December 2024
-- ✨ Added modular configuration arrays for easy maintenance
-- ✨ Added `--dry-run` mode to preview installation without making changes
-- ✨ Added `--backup-dir` option to customize backup location
-- ✨ Added source structure verification before installation
-- ✨ Added workstyle configuration for workspace icons
-- 🔧 Refactored installer to use centralized config arrays
-- 🔧 Improved backup system with dynamic config detection
-- 📚 Enhanced documentation with maintenance guide

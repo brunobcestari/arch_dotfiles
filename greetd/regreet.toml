@@ -1,3 +1,25 @@
+# ReGreet Configuration
+# Matching system theme (cyan/green accents on dark background)
+
+[background]
+# Set your wallpaper path here (uncomment and update when ready)
+path = "/usr/share/backgrounds/neon-night-city-cyberpunk.png"
+fit = "Cover"
+
+[GTK]
+application_prefer_dark_theme = true
+cursor_theme_name = "Adwaita"
+font_name = "JetBrainsMono Nerd Font 14"
+icon_theme_name = "Papirus-Dark"
+theme_name = "Adwaita-dark"
+
+[appearance]
+greeting_msg = "Welcome back!"
+
+[widget.clock]
+format = "%H:%M"
+resolution = "1000ms"
+
 [commands]
 reboot = [ "systemctl", "reboot" ]
 poweroff = [ "systemctl", "poweroff" ]
