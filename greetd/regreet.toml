@@ -11,7 +11,7 @@ application_prefer_dark_theme = true
 cursor_theme_name = "Adwaita"
 font_name = "JetBrainsMono Nerd Font 14"
 icon_theme_name = "Papirus-Dark"
-theme_name = "Adwaita-dark"
+theme_name = "Adwaita"
 
 [appearance]
 greeting_msg = "Welcome back!"

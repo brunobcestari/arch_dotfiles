@@ -1,12 +1,11 @@
-/* ReGreet Custom Theme
+/* ReGreet Custom Theme (GTK4)
  * Matching system theme: cyan (#33ccff) / green (#00ff99) accents
  * Dark background: rgba(26, 27, 38)
  * Font: JetBrainsMono Nerd Font
  */
 
 /* Main window background - solid dark fallback if no wallpaper */
-window,
-window.background {
+window {
     background-color: #1a1b26;
     background-image: none;
 }
@@ -20,7 +19,6 @@ window > box {
 /* All text elements */
 label {
     color: #ffffff;
-    font-family: "JetBrainsMono Nerd Font", monospace;
 }
 
 /* Greeting message */
@@ -48,9 +46,10 @@ entry {
     min-height: 20px;
 }
 
-entry:focus {
+entry:focus-within {
     border-color: #33ccff;
-    box-shadow: 0 0 0 2px rgba(51, 204, 255, 0.2);
+    outline: 2px solid rgba(51, 204, 255, 0.2);
+    outline-offset: -2px;
 }
 
 entry:hover {
@@ -58,7 +57,7 @@ entry:hover {
 }
 
 /* Placeholder text */
-entry placeholder {
+entry > text > placeholder {
     color: #888888;
 }
 
@@ -83,8 +82,9 @@ button:active {
     background-color: rgba(51, 204, 255, 0.3);
 }
 
-button:focus {
-    box-shadow: 0 0 0 2px rgba(51, 204, 255, 0.3);
+button:focus-within {
+    outline: 2px solid rgba(51, 204, 255, 0.3);
+    outline-offset: -2px;
 }
 
 /* Primary/suggested action buttons (login) */
@@ -110,9 +110,8 @@ button.destructive-action:hover {
     background-color: rgba(243, 139, 168, 0.3);
 }
 
-/* Dropdown menus / combo boxes */
-dropdown,
-combobox {
+/* Dropdown menus */
+dropdown {
     background-color: rgba(255, 255, 255, 0.05);
     color: #ffffff;
     border: 2px solid #595959;
@@ -120,34 +119,34 @@ combobox {
     padding: 8px 12px;
 }
 
-dropdown:hover,
-combobox:hover {
+dropdown:hover {
     border-color: #888888;
 }
 
-dropdown:focus,
-combobox:focus {
+dropdown:focus-within {
     border-color: #33ccff;
 }
 
 /* Dropdown popover */
-popover {
+popover > contents {
     background-color: rgba(26, 27, 38, 0.98);
     border: 1px solid #33ccff;
     border-radius: 8px;
 }
 
-popover modelbutton {
+popover > contents > box > button {
     padding: 8px 12px;
     color: #cccccc;
+    background: transparent;
+    border: none;
 }
 
-popover modelbutton:hover {
+popover > contents > box > button:hover {
     background-color: rgba(51, 204, 255, 0.2);
     color: #33ccff;
 }
 
-popover modelbutton:selected {
+popover > contents > box > button:checked {
     background-color: rgba(51, 204, 255, 0.3);
     color: #33ccff;
 }
@@ -157,16 +156,16 @@ listview {
     background-color: transparent;
 }
 
-listview row {
+listview > row {
     padding: 8px 12px;
     border-radius: 6px;
 }
 
-listview row:hover {
+listview > row:hover {
     background-color: rgba(255, 255, 255, 0.05);
 }
 
-listview row:selected {
+listview > row:selected {
     background-color: rgba(51, 204, 255, 0.2);
     color: #33ccff;
 }
@@ -176,14 +175,14 @@ scrollbar {
     background-color: transparent;
 }
 
-scrollbar slider {
+scrollbar > range > trough > slider {
     background-color: rgba(255, 255, 255, 0.2);
     border-radius: 4px;
     min-width: 8px;
     min-height: 8px;
 }
 
-scrollbar slider:hover {
+scrollbar > range > trough > slider:hover {
     background-color: rgba(255, 255, 255, 0.3);
 }
 
@@ -207,8 +206,8 @@ scrollbar slider:hover {
     color: #00ff99;
 }
 
-/* Selection highlight color */
-selection {
+/* Text selection highlight */
+entry > text selection {
     background-color: rgba(51, 204, 255, 0.4);
     color: #ffffff;
 }

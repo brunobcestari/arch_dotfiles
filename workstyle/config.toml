@@ -32,13 +32,16 @@
 ".pdf" = ""
 "slack" = ""
 "spotify" = ""
-"proton mail" = "󰇱"
 "thunderbird" = "󰇮"
 "psensor" = ""
 "pavucontrol" = "󱡫"
 "waydroid" = ""
 "podman" = ""
 "code" = "󰨞"
+"calendar" = ""
+"proton mail" = "󰇱"
+"proton pass" = "󰯄"
+"proton vpn" = "󰦝"
 
 [other]
 fallback_icon = ""
