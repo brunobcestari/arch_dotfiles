@@ -40,10 +40,6 @@ readonly CONFIG_DIRS=(
 # Format: "source_path:destination_filename"
 readonly HOME_FILES=(
     "vim/vimrc:.vimrc"
-    "bashrc:.bashrc"
-    "bash_profile:.bash_profile"
-    "gitconfig:.gitconfig"
-    "npmrc:.npmrc"
 )
 
 # Conditional configs (package_name:source_dir:dest_dir)

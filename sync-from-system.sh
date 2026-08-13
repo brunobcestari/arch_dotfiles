@@ -38,10 +38,6 @@ readonly CONFIG_DIRS=(
 # Home directory files (system_path:repo_path)
 readonly HOME_FILES=(
     "$HOME/.vimrc:vim/vimrc"
-    "$HOME/.bashrc:bashrc"
-    "$HOME/.bash_profile:bash_profile"
-    "$HOME/.gitconfig:gitconfig"
-    "$HOME/.npmrc:npmrc"
 )
 
 # System files requiring sudo (system_path:repo_path)
