@@ -1,0 +1,214 @@
+/* ReGreet Custom Theme
+ * Matching system theme: cyan (#33ccff) / green (#00ff99) accents
+ * Dark background: rgba(26, 27, 38)
+ * Font: JetBrainsMono Nerd Font
+ */
+
+/* Main window background - solid dark fallback if no wallpaper */
+window,
+window.background {
+    background-color: #1a1b26;
+    background-image: none;
+}
+
+/* Ensure the main container is also dark */
+box,
+window > box {
+    background-color: transparent;
+}
+
+/* All text elements */
+label {
+    color: #ffffff;
+    font-family: "JetBrainsMono Nerd Font", monospace;
+}
+
+/* Greeting message */
+.greeting {
+    font-size: 24px;
+    font-weight: bold;
+    color: #33ccff;
+}
+
+/* Clock display */
+.clock {
+    font-size: 48px;
+    font-weight: bold;
+    color: #ffffff;
+}
+
+/* Input fields (username, password) */
+entry {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: #ffffff;
+    border: 2px solid #595959;
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 14px;
+    min-height: 20px;
+}
+
+entry:focus {
+    border-color: #33ccff;
+    box-shadow: 0 0 0 2px rgba(51, 204, 255, 0.2);
+}
+
+entry:hover {
+    border-color: #888888;
+}
+
+/* Placeholder text */
+entry placeholder {
+    color: #888888;
+}
+
+/* Buttons */
+button {
+    background-color: rgba(51, 204, 255, 0.1);
+    color: #33ccff;
+    border: 2px solid #33ccff;
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-weight: bold;
+    font-size: 14px;
+    min-height: 20px;
+}
+
+button:hover {
+    background-color: rgba(51, 204, 255, 0.2);
+    color: #ffffff;
+}
+
+button:active {
+    background-color: rgba(51, 204, 255, 0.3);
+}
+
+button:focus {
+    box-shadow: 0 0 0 2px rgba(51, 204, 255, 0.3);
+}
+
+/* Primary/suggested action buttons (login) */
+button.suggested-action {
+    background-color: #33ccff;
+    color: #1a1b26;
+    border-color: #33ccff;
+}
+
+button.suggested-action:hover {
+    background-color: #66ddff;
+    border-color: #66ddff;
+}
+
+/* Destructive buttons (power off, reboot) */
+button.destructive-action {
+    background-color: rgba(243, 139, 168, 0.2);
+    color: #f38ba8;
+    border-color: #f38ba8;
+}
+
+button.destructive-action:hover {
+    background-color: rgba(243, 139, 168, 0.3);
+}
+
+/* Dropdown menus / combo boxes */
+dropdown,
+combobox {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: #ffffff;
+    border: 2px solid #595959;
+    border-radius: 8px;
+    padding: 8px 12px;
+}
+
+dropdown:hover,
+combobox:hover {
+    border-color: #888888;
+}
+
+dropdown:focus,
+combobox:focus {
+    border-color: #33ccff;
+}
+
+/* Dropdown popover */
+popover {
+    background-color: rgba(26, 27, 38, 0.98);
+    border: 1px solid #33ccff;
+    border-radius: 8px;
+}
+
+popover modelbutton {
+    padding: 8px 12px;
+    color: #cccccc;
+}
+
+popover modelbutton:hover {
+    background-color: rgba(51, 204, 255, 0.2);
+    color: #33ccff;
+}
+
+popover modelbutton:selected {
+    background-color: rgba(51, 204, 255, 0.3);
+    color: #33ccff;
+}
+
+/* Session/User selection list */
+listview {
+    background-color: transparent;
+}
+
+listview row {
+    padding: 8px 12px;
+    border-radius: 6px;
+}
+
+listview row:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+listview row:selected {
+    background-color: rgba(51, 204, 255, 0.2);
+    color: #33ccff;
+}
+
+/* Scrollbar styling */
+scrollbar {
+    background-color: transparent;
+}
+
+scrollbar slider {
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    min-width: 8px;
+    min-height: 8px;
+}
+
+scrollbar slider:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Power buttons area */
+.power-button {
+    color: #f38ba8;
+}
+
+.power-button:hover {
+    background-color: rgba(243, 139, 168, 0.2);
+}
+
+/* Error messages */
+.error {
+    color: #ff6666;
+    font-weight: bold;
+}
+
+/* Success indicators */
+.success {
+    color: #00ff99;
+}
+
+/* Selection highlight color */
+selection {
+    background-color: rgba(51, 204, 255, 0.4);
+    color: #ffffff;
+}

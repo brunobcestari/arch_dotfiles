@@ -30,12 +30,20 @@ readonly CONFIG_DIRS=(
     "rofi"
     "waybar"
     "uwsm"
+    "gtk-3.0"
+    "gtk-4.0"
+    "autostart"
+    "git"
 )
 
 # Home directory files (source -> ~/destination)
 # Format: "source_path:destination_filename"
 readonly HOME_FILES=(
     "vim/vimrc:.vimrc"
+    "bashrc:.bashrc"
+    "bash_profile:.bash_profile"
+    "gitconfig:.gitconfig"
+    "npmrc:.npmrc"
 )
 
 # Conditional configs (package_name:source_dir:dest_dir)

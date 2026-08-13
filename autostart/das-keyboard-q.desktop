@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=das-keyboard-q
+Comment=das-keyboard-qstartup script
+Exec=/usr/lib/das-keyboard-q/das-keyboard-q --hidden
+StartupNotify=false
+Terminal=false

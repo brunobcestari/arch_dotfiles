@@ -29,11 +29,19 @@ readonly CONFIG_DIRS=(
     "rofi"
     "waybar"
     "uwsm"
+    "gtk-3.0"
+    "gtk-4.0"
+    "autostart"
+    "git"
 )
 
 # Home directory files (system_path:repo_path)
 readonly HOME_FILES=(
     "$HOME/.vimrc:vim/vimrc"
+    "$HOME/.bashrc:bashrc"
+    "$HOME/.bash_profile:bash_profile"
+    "$HOME/.gitconfig:gitconfig"
+    "$HOME/.npmrc:npmrc"
 )
 
 # System files requiring sudo (system_path:repo_path)
@@ -43,7 +51,7 @@ readonly SYSTEM_FILES=(
 
 # Files to exclude from sync (generated files, etc.)
 readonly EXCLUDE_FILES=(
-    # Add any generated files here if needed
+    "alacritty/*.bak"
 )
 
 # Colors
