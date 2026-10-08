@@ -5,9 +5,10 @@
 -- See https://wiki.hypr.land/Configuring/Basics/Window-Rules/ for more
 -- See https://wiki.hypr.land/Configuring/Basics/Workspace-Rules/ for workspace rules
 
--- Workstyle https://github.com/pierrechevalier83/workstyle
+-- Workspace icons (replaces workstyle, which sends legacy dispatches that Lua mode rejects).
+-- Reuses the icon mapping from ~/.config/workstyle/config.toml
 hl.on("hyprland.start", function()
-    hl.exec_cmd("workstyle &> /tmp/workstyle.log")
+    hl.exec_cmd("~/.config/hypr/scripts/workspace-icons.py &> /tmp/workspace-icons.log")
 end)
 
 -- Window rules

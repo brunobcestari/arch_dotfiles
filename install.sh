@@ -34,6 +34,7 @@ readonly CONFIG_DIRS=(
     "gtk-4.0"
     "autostart"
     "git"
+    "workstyle"  # icon map read by hypr/scripts/workspace-icons.py
 )
 
 # Home directory files (source -> ~/destination)
@@ -44,7 +45,6 @@ readonly HOME_FILES=(
 
 # Conditional configs (package_name:source_dir:dest_dir)
 readonly CONDITIONAL_CONFIGS=(
-    "workstyle-git:workstyle:workstyle"
 )
 
 # Colors

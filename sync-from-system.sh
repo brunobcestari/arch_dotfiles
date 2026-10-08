@@ -33,6 +33,7 @@ readonly CONFIG_DIRS=(
     "gtk-4.0"
     "autostart"
     "git"
+    "workstyle"  # icon map read by hypr/scripts/workspace-icons.py
 )
 
 # Home directory files (system_path:repo_path)

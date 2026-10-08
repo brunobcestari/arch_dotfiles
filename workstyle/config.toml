@@ -42,6 +42,9 @@
 "proton mail" = "󰇱"
 "proton pass" = "󰯄"
 "proton vpn" = "󰦝"
+"telegram" = ""
+"winbox" = "󱂇"
+"tidal" = "󰎆"
 
 [other]
 fallback_icon = ""

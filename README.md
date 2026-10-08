@@ -76,7 +76,6 @@ The installer prompts for these optional categories:
 | development | Vim, Node.js, npm, git, Waydroid, Podman |
 | monitoring | btop |
 | hardware | brightnessctl, playerctl, OpenLinkHub, razercfg, v4l-utils |
-| customization | workstyle-git |
 | personal | ProtonMail, Proton Pass, pCloud, Thunderbird, etc. |
 
 Optional packages are defined in `optional-apps.conf` with the format:
