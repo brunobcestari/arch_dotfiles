@@ -17,7 +17,8 @@ uwsm
 dbus-broker
 
 ## Status Bar & Widgets
-waybar
+# TODO: back to "waybar" once a release > 0.15.0 ships (Lua dispatch fix, Waybar PR #5013)
+waybar-git
 wttrbar
 
 ## Notifications
