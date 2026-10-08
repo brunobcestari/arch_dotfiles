@@ -48,6 +48,7 @@ readonly SYSTEM_FILES=(
 # Files to exclude from sync (generated files, etc.)
 readonly EXCLUDE_FILES=(
     "alacritty/*.bak"
+    "greetd/hyprland.conf"  # legacy greeter config, replaced by greetd/hyprland.lua
 )
 
 # Colors
@@ -228,7 +229,14 @@ sync_greetd_config() {
     fi
 
     mkdir -p "$SCRIPT_DIR/greetd"
-    sudo cp "$greetd_path"/* "$SCRIPT_DIR/greetd/"
+    local file
+    for file in "$greetd_path"/*; do
+        if is_excluded "greetd/$(basename "$file")"; then
+            log_warning "Skipping excluded file: $file"
+            continue
+        fi
+        sudo cp "$file" "$SCRIPT_DIR/greetd/"
+    done
     sudo chown "$USER:$USER" "$SCRIPT_DIR"/greetd/*
 
     log_success "greetd config synced"

@@ -6,5 +6,5 @@
 vt = 1
 
 [default_session]
-command = "start-hyprland -- -c /etc/greetd/hyprland.conf"
+command = "start-hyprland -- -c /etc/greetd/hyprland.lua"
 user = "greeter"

@@ -240,6 +240,7 @@ verify_source_structure() {
         "$SCRIPT_DIR/packages.txt"
         "$SCRIPT_DIR/optional-apps.conf"
         "$SCRIPT_DIR/greetd/config.toml"
+        "$SCRIPT_DIR/greetd/hyprland.lua"
         "$SCRIPT_DIR/ps1/custom_ps1.sh"
         "$SCRIPT_DIR/backgrounds"
     )
@@ -795,6 +796,7 @@ install_greetd_config() {
 
     if [[ "$DRY_RUN" == "true" ]]; then
         echo -e "${YELLOW}[DRY-RUN]${NC} Would run: sudo cp $greetd_path/* /etc/greetd/"
+        echo -e "${YELLOW}[DRY-RUN]${NC} Would run: sudo rm -f /etc/greetd/hyprland.conf"
         return
     fi
 
@@ -806,6 +808,8 @@ install_greetd_config() {
     # greetd creates /etc/greetd on package install, but ensure it exists
     sudo mkdir -p /etc/greetd
     sudo cp $SCRIPT_DIR/greetd/* /etc/greetd/
+    # Greeter config moved to hyprland.lua (Hyprland 0.57+); drop the stale legacy file
+    sudo rm -f /etc/greetd/hyprland.conf
 
     log_success "greetd config installed"
 }

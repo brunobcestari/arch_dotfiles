@@ -104,9 +104,9 @@ Where `repo` is either `official` (pacman) or `aur`. The installer uses an inter
 ```
 arch_dotfiles/
 ├── hypr/                  # Hyprland configs (modular)
-│   ├── hyprland.conf      # Main config
-│   ├── monitors.conf      # Display setup (auto-generated)
-│   ├── keybindings.conf   # Keyboard shortcuts
+│   ├── hyprland.lua       # Main config
+│   ├── monitors.lua       # Display setup (auto-generated)
+│   ├── keybindings.lua    # Keyboard shortcuts
 │   └── ...
 ├── waybar/                # Status bar
 │   ├── config-*.jsonc.tpl # Bar configurations
