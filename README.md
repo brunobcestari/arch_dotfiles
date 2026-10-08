@@ -56,7 +56,7 @@ Features:
 - Shows available resolutions/refresh rates (if `v4l-utils` is installed)
 - Lets you select primary monitor and configure each display
 - Asks for left-to-right monitor order and auto-calculates positions
-- Generates `hypr/monitors.conf`
+- Generates `hypr/monitors.lua`
 
 ### Command-Line Options
 
